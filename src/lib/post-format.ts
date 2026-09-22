@@ -106,6 +106,7 @@ export function sanitizePostBody(input: string | null | undefined): string {
   for (const line of lines) {
     if (CUT_FROM.some((re) => re.test(line))) break;
     if (line.trim() && DROP_LINE.some((re) => re.test(line))) continue;
+    if (line.trim() && OWNER_NOTE_LINE.some((re) => re.test(line))) continue;
     kept.push(line);
   }
   text = dedupeParagraphs(kept.join("\n"));
