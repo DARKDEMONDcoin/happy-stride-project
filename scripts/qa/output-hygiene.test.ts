@@ -90,3 +90,8 @@ test("hashtags survive when an owner note sits above them", () => {
 test("a standalone label line above the post is removed", () => {
   expect(sanitizePostBody("إعلان\n\nخصم ٢٠٪ اليوم فقط.")).toBe("خصم ٢٠٪ اليوم فقط.");
 });
+
+test("an inline measurement parenthesis is stripped from the post", () => {
+  const dirty = "أرسل كلمة «قهوة» في رسالة (يُقاس التفاعل بعد ٤٨ ساعة بعدد الرسائل).";
+  expect(sanitizePostBody(dirty)).toBe("أرسل كلمة «قهوة» في رسالة.");
+});
