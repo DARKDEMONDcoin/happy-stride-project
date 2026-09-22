@@ -22,6 +22,7 @@ const ALIASES: Record<string, RegExp> = {
   x: /تويتر|إكس\b|اكس\b|twitter|\bx\.com|(?:^|\s)(?:على|علي|ع)\s*x(?:\s|$|[،,.])/i,
   pinterest: /بنترست|بينترست|pinterest/i,
   youtube: /يوتيوب|يوتوب|youtube|شورتس|shorts/i,
+  telegram: /تيليجرام|تيليغرام|تليجرام|تليغرام|تلجرام|telegram|\btg\b/i,
   tiktok: /تيك\s*توك|تيكتوك|tiktok/i,
   snapchat: /سناب|snapchat/i,
   threads: /ثريدز|threads/i,
