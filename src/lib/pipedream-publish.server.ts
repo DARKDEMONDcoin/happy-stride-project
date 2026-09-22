@@ -203,12 +203,15 @@ async function publishToPlatformInner(
 
   // تيليجرام: نشر مباشر ببوت العميل نفسه (بلا وسيط).
   if (params.provider === "telegram") {
-    const { telegramPublish } = await import("./telegram.server");
-    const result = await telegramPublish(admin, params.workspaceId, {
-      text: params.text,
-      ...(firstImage ? { imageUrl: firstImage } : {}),
-    });
-    return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
+    const { loadTelegramConfig, telegramPublish } = await import("./telegram.server");
+    const telegramConfig = await loadTelegramConfig(admin, params.workspaceId);
+    if (telegramConfig) {
+      const result = await telegramPublish(admin, params.workspaceId, {
+        text: params.text,
+        ...(firstImage ? { imageUrl: firstImage } : {}),
+      });
+      return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
+    }
   }
 
   // المسار الهجين: إن كان ميتا مربوطاً مباشرةً بتطبيقنا الخاص (توكن صفحة محفوظ)،
