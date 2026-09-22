@@ -9,7 +9,10 @@ import type { Database } from "@/integrations/supabase/types";
 type Admin = SupabaseClient<Database>;
 
 export type TelegramConfig = {
+  /** توكن بوت العميل، أو فارغ عند استخدام بوت سهل المشترك. */
   botToken: string;
+  /** true عندما تستخدم مساحة العمل بوت سهل الجاهز بدل بوت خاص. */
+  shared?: boolean;
   botUsername?: string;
   chatId: string;
   chatTitle?: string;
@@ -27,6 +30,30 @@ export function publicOrigin(): string {
 
 export function webhookUrlFor(workspaceId: string): string {
   return `${publicOrigin()}/api/public/telegram/webhook?ws=${workspaceId}`;
+}
+
+/** ويبهوك واحد لبوت سهل المشترك — نستنتج مساحة العمل من المحادثة نفسها. */
+export function sharedWebhookUrl(): string {
+  return `${publicOrigin()}/api/public/telegram/webhook?shared=1`;
+}
+
+/** توكن بوت سهل الجاهز (اختياري) — يسمح بالنشر بلا إنشاء بوت من BotFather. */
+export async function platformBotToken(): Promise<string> {
+  const { getSecret } = await import("./secrets.server");
+  return (await getSecret("TELEGRAM_BOT_TOKEN")).trim();
+}
+
+/** بيانات بوت سهل الجاهز، أو null إن لم يُضبط أو كان توكنه غير صالح. */
+export async function platformBot(): Promise<{ token: string; username: string } | null> {
+  const token = await platformBotToken();
+  if (!token) return null;
+  try {
+    const me = await tg<{ username?: string }>(token, "getMe");
+    return { token, username: me.username ?? "" };
+  } catch (error) {
+    console.error("[telegram] platform bot token invalid:", error);
+    return null;
+  }
 }
 
 /** سرّ التحقق من الويبهوك، مشتق من توكن البوت نفسه (لا نخزّن سرّاً إضافياً). */
@@ -78,7 +105,7 @@ export async function tg<T = unknown>(
   return payload.result as T;
 }
 
-/** بيانات ربط تيليجرام لمساحة عمل (مفكوكة التشفير). */
+/** بيانات ربط تيليجرام لمساحة عمل (مفكوكة التشفير، والتوكن جاهز للاستعمال). */
 export async function loadTelegramConfig(
   admin: Admin,
   workspaceId: string,
@@ -91,8 +118,58 @@ export async function loadTelegramConfig(
     .maybeSingle();
   const { openConfig } = await import("./credential-crypto.server");
   const config = await openConfig<TelegramConfig>(data?.config);
-  if (!config?.botToken) return null;
-  return config;
+  if (!config?.chatId) return null;
+  if (config.botToken) return config;
+  if (!config.shared) return null;
+  const token = await platformBotToken();
+  if (!token) return null;
+  return { ...config, botToken: token };
+}
+
+/** مساحة العمل صاحبة محادثة تيليجرام — يُستخدم مع بوت سهل المشترك. */
+export async function workspaceForChat(admin: Admin, chatId: string): Promise<string | null> {
+  const { data: link } = await admin
+    .from("command_links")
+    .select("workspace_id")
+    .eq("channel", "telegram")
+    .eq("external_id", chatId)
+    .maybeSingle();
+  if (link?.workspace_id) return link.workspace_id;
+
+  // احتياط: نطابق قناة النشر المحفوظة في بيانات الربط.
+  const { data: rows } = await admin
+    .from("integration_credentials")
+    .select("workspace_id, config")
+    .eq("provider", "telegram")
+    .limit(200);
+  const { openConfig } = await import("./credential-crypto.server");
+  for (const row of rows ?? []) {
+    const config = await openConfig<TelegramConfig>(row.config);
+    if (config?.chatId && String(config.chatId) === chatId) return row.workspace_id;
+  }
+  return null;
+}
+
+/** يسجّل محادثة/قناة كجهة مصرّح لها بإصدار الأوامر (تظهر في «قنوات المستخدمين»). */
+export async function ensureCommandLink(
+  admin: Admin,
+  workspaceId: string,
+  chatId: string,
+  label: string,
+) {
+  const { error } = await admin.from("command_links").upsert(
+    {
+      workspace_id: workspaceId,
+      channel: "telegram",
+      external_id: chatId,
+      role: "owner",
+      label: label.slice(0, 60),
+      status: "active",
+      last_seen_at: new Date().toISOString(),
+    },
+    { onConflict: "channel,external_id" },
+  );
+  if (error) console.error("[telegram] ensureCommandLink failed:", error.message);
 }
 
 export async function saveTelegramConfig(
@@ -130,12 +207,12 @@ export async function saveTelegramConfig(
 }
 
 /** يسجّل ويبهوك البوت ليصل كلام صاحب العمل إلى الفريق. */
-export async function registerWebhook(workspaceId: string, botToken: string) {
+export async function registerWebhook(workspaceId: string, botToken: string, shared = false) {
   await tg(botToken, "setWebhook", {
-    url: webhookUrlFor(workspaceId),
+    url: shared ? sharedWebhookUrl() : webhookUrlFor(workspaceId),
     secret_token: await webhookSecret(botToken),
     allowed_updates: ["message", "edited_message", "channel_post"],
-    drop_pending_updates: true,
+    drop_pending_updates: false,
   });
 }
 
