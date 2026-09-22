@@ -1033,11 +1033,6 @@ export async function runEmployeeTurn(
       }
       if (replies.length) {
         reply = replies.join("\n\n");
-        // مخرج واحد طويل مع ردّ قصير: نعرض المخرج نفسه في المحادثة بدل تركه في المهام فقط.
-        const only = deliverables.length === 1 ? deliverables[0] : null;
-        if (only?.body && only.body.length > 400 && reply.length < only.body.length * 0.5) {
-          reply = `${reply.trim()}\n\n### ${only.title}\n\n${only.body}`;
-        }
       } else if (deliverables.length) {
         reply = deliverables.map((d) => `### ${d.title}\n\n${d.body}`).join("\n\n---\n\n");
       } else {
