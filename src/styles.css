@@ -44700,39 +44700,49 @@ html {
   }
   .sahl-versus-head {
     display: grid;
-    grid-template-columns: minmax(96px, 0.34fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .sahl-versus-head span {
     min-width: 0;
-    padding: 12px 14px;
+    padding: 10px 8px;
   }
-  .sahl-versus-head span:nth-child(2) {
+  .sahl-versus-head span:first-child {
     display: none;
   }
+  .sahl-versus-head span:nth-child(2) {
+    display: flex;
+  }
   .sahl-versus-row {
-    grid-template-columns: minmax(96px, 0.34fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
     padding: 0;
   }
   .sahl-versus-row > span:first-child {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
-    padding: 14px 12px;
-    font-size: 0.82rem;
-    line-height: 1.65;
+    justify-content: center;
+    padding: 9px 12px 7px;
+    font-size: 0.72rem;
+    line-height: 1.45;
   }
   .sahl-versus-row .is-plain {
-    display: none;
+    display: flex;
+    min-width: 0;
+    min-height: 74px;
+    padding: 11px 10px;
+    font-size: clamp(0.68rem, 3vw, 0.78rem);
+    line-height: 1.65;
   }
   .sahl-versus-row .is-sahl {
     min-width: 0;
-    height: 100%;
+    min-height: 74px;
     margin: 0;
-    padding: 14px;
+    padding: 11px 10px;
     border-radius: 0;
     align-items: flex-start;
-    font-size: 0.8rem;
-    line-height: 1.8;
+    font-size: clamp(0.68rem, 3vw, 0.78rem);
+    line-height: 1.65;
   }
 }
 
