@@ -198,7 +198,7 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
             connectMutation.mutate({
               botToken: activeMode === "shared" ? "" : botToken.trim(),
               chatId: chatId.trim(),
-              sendTest,
+              sendTest: false,
             });
           }}
         >
