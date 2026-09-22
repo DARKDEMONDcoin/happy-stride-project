@@ -9,7 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { scorePost } from "./post-quality";
-import { localParts, offsetMinutes, zonedTimeToUtc } from "./timezone";
+import { localParts, zonedTimeToUtc } from "./timezone";
 
 type Admin = SupabaseClient<Database>;
 export type AutopilotRow = Database["public"]["Tables"]["social_autopilot"]["Row"];

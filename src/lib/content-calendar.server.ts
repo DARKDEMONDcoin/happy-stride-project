@@ -256,24 +256,15 @@ function slotDates(input: PlanInput): { at: Date; provider: string }[] {
   const start = input.startAt ? new Date(input.startAt) : new Date();
   const primary = input.providers[0] ?? "instagram";
   const hours = BEST_HOURS[primary] ?? [11, 14, 20];
-  // إزاحة المنطقة الزمنية (تقريب دقيق كفاية للجدولة)
-  const offsetMin = tzOffsetMinutes(input.timezone, start);
+  // يوم البداية بالتوقيت المحلي للعلامة، والإزاحة تُحسب لكل موعد على حدة
+  // حتى لا تنزاح المواعيد ساعة كاملة عند تغيّر التوقيت الصيفي داخل الخطة.
+  const first = localParts(input.timezone, start);
   for (let d = 0; d < input.days; d += 1) {
     for (let i = 0; i < input.perDay; i += 1) {
       const hour = hours[i % hours.length]!;
-      const local = new Date(
-        Date.UTC(
-          start.getUTCFullYear(),
-          start.getUTCMonth(),
-          start.getUTCDate() + 1 + d,
-          hour,
-          0,
-          0,
-        ),
-      );
-      const utc = new Date(local.getTime() - offsetMin * 60_000);
+      const at = zonedTimeToUtc(input.timezone, first.y, first.m, first.d + 1 + d, hour, 0);
       out.push({
-        at: utc,
+        at,
         provider: input.providers[(d * input.perDay + i) % input.providers.length] ?? primary,
       });
     }
@@ -281,21 +272,6 @@ function slotDates(input: PlanInput): { at: Date; provider: string }[] {
   return out;
 }
 
-function tzOffsetMinutes(tz: string, at: Date): number {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      timeZoneName: "shortOffset",
-    }).formatToParts(at);
-    const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+3";
-    const m = name.match(/([+-])(\d{1,2})(?::?(\d{2}))?/);
-    if (!m) return /^(GMT|UTC)$/i.test(name.trim()) ? 0 : 180;
-    const sign = m[1] === "-" ? -1 : 1;
-    return sign * (Number(m[2]) * 60 + Number(m[3] ?? 0));
-  } catch {
-    return 180;
-  }
-}
 
 export async function planCalendar(
   admin: Admin,
