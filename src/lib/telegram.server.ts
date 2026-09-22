@@ -66,7 +66,9 @@ export async function tg<T = unknown>(
       throw new Error("توكن البوت غير صحيح — انسخه من BotFather مرة أخرى.");
     }
     if (/chat not found/i.test(detail)) {
-      throw new Error("لم نجد القناة/المجموعة — تأكد أن البوت أُضيف إليها كمشرف.");
+      throw new Error(
+        "لم نجد القناة — أضف البوت مشرفاً في قناتك وانشر فيها أي رسالة، ثم اضغط «اكتشف» لاختيار القناة بدل كتابة المعرّف.",
+      );
     }
     if (/not enough rights|administrator/i.test(detail)) {
       throw new Error("البوت ليس مشرفاً في القناة — أضفه كمشرف بصلاحية نشر الرسائل.");
