@@ -206,7 +206,7 @@ async function publishToPlatformInner(
     const { telegramPublish } = await import("./telegram.server");
     const result = await telegramPublish(admin, params.workspaceId, {
       text: params.text,
-      imageUrl: firstImage,
+      ...(firstImage ? { imageUrl: firstImage } : {}),
     });
     return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
   }
