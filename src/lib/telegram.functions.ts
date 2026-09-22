@@ -31,7 +31,7 @@ export const telegramStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const admin = await assertOwner(context.supabase, data.workspaceId);
     const { loadTelegramConfig, platformBot } = await import("./telegram.server");
-    const [config, { data: links }, shared] = await Promise.all([
+    const [config, { data: links }, platform] = await Promise.all([
       loadTelegramConfig(admin, data.workspaceId),
       admin
         .from("command_links")
@@ -39,10 +39,8 @@ export const telegramStatus = createServerFn({ method: "POST" })
         .eq("workspace_id", data.workspaceId)
         .eq("channel", "telegram")
         .order("created_at", { ascending: true }),
-      import("./telegram.server").then(() => null),
+      platformBot(),
     ]);
-    void shared;
-    const platform = await platformBot();
     return {
       connected: Boolean(config?.botToken),
       usesSharedBot: Boolean(config?.shared),
