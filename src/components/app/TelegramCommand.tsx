@@ -8,6 +8,7 @@ import { createLinkCode, removeCommandLink } from "@/lib/command-channels.functi
 import {
   connectTelegram,
   disconnectTelegram,
+  discoverTelegramChats,
   telegramStatus,
   testTelegram,
 } from "@/lib/telegram.functions";
@@ -28,6 +29,30 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [newCode, setNewCode] = useState<string | null>(null);
+  const [botToken, setBotToken] = useState("");
+  const [chatId, setChatId] = useState("");
+  const [sendTest, setSendTest] = useState(true);
+  const [chats, setChats] = useState<{ id: string; title: string; type: string }[] | null>(null);
+  const discover = useServerFn(discoverTelegramChats);
+
+  const discoverMutation = useMutation({
+    mutationFn: () => discover({ data: { workspaceId, botToken: botToken.trim() } }),
+    onSuccess: (r) => {
+      setError(null);
+      setChats(r.chats);
+      if (!r.chats.length) {
+        setNotice(
+          "لم أجد أي قناة بعد. أضف البوت مشرفاً في قناتك وانشر فيها أي رسالة (أو ابعت /start للبوت)، ثم اضغط اكتشاف مرة أخرى.",
+        );
+      } else {
+        setNotice(null);
+      }
+    },
+    onError: (e: Error) => {
+      setNotice(null);
+      setError(e.message);
+    },
+  });
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["telegram-channel", workspaceId],
@@ -130,25 +155,64 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
           className="grid gap-2 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
-            const f = new FormData(e.currentTarget);
             connectMutation.mutate({
-              botToken: String(f.get("botToken") ?? "").trim(),
-              chatId: String(f.get("chatId") ?? "").trim(),
-              sendTest: f.get("sendTest") === "on",
+              botToken: botToken.trim(),
+              chatId: chatId.trim(),
+              sendTest,
             });
           }}
         >
           <input
-            name="botToken"
             dir="ltr"
             required
+            value={botToken}
+            onChange={(e) => setBotToken(e.target.value)}
             placeholder="123456789:AA..."
             className={field}
             autoComplete="off"
           />
-          <input name="chatId" dir="ltr" required placeholder="@mychannel" className={field} />
+          <div className="flex gap-2">
+            <input
+              dir="ltr"
+              required
+              value={chatId}
+              onChange={(e) => setChatId(e.target.value)}
+              placeholder="@mychannel"
+              className={field}
+            />
+            <button
+              type="button"
+              onClick={() => discoverMutation.mutate()}
+              disabled={discoverMutation.isPending || !botToken.trim()}
+              className="shrink-0 rounded-2xl border border-border px-4 py-3 text-sm font-bold hover:bg-secondary disabled:opacity-60"
+            >
+              {discoverMutation.isPending ? "…" : "اكتشف"}
+            </button>
+          </div>
+          {chats?.length ? (
+            <ul className="sm:col-span-2 flex flex-wrap gap-2">
+              {chats.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => setChatId(c.id)}
+                    className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${
+                      chatId === c.id ? "border-jade bg-jade/12" : "border-border hover:bg-secondary"
+                    }`}
+                  >
+                    {c.title} · {c.type}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input type="checkbox" name="sendTest" defaultChecked /> أرسل رسالة تجربة للقناة
+            <input
+              type="checkbox"
+              checked={sendTest}
+              onChange={(e) => setSendTest(e.target.checked)}
+            />{" "}
+            أرسل رسالة تجربة للقناة
           </label>
           <div className="flex flex-wrap gap-2">
             <button

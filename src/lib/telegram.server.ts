@@ -66,7 +66,9 @@ export async function tg<T = unknown>(
       throw new Error("توكن البوت غير صحيح — انسخه من BotFather مرة أخرى.");
     }
     if (/chat not found/i.test(detail)) {
-      throw new Error("لم نجد القناة/المجموعة — تأكد أن البوت أُضيف إليها كمشرف.");
+      throw new Error(
+        "لم نجد القناة — أضف البوت مشرفاً في قناتك وانشر فيها أي رسالة، ثم اضغط «اكتشف» لاختيار القناة بدل كتابة المعرّف.",
+      );
     }
     if (/not enough rights|administrator/i.test(detail)) {
       throw new Error("البوت ليس مشرفاً في القناة — أضفه كمشرف بصلاحية نشر الرسائل.");
@@ -177,4 +179,33 @@ export async function telegramPublish(
 export async function telegramReply(botToken: string, chatId: string | number, text: string) {
   const body = text.length > 4096 ? `${text.slice(0, 4080)}…` : text;
   await tg(botToken, "sendMessage", { chat_id: chatId, text: body });
+}
+
+/**
+ * يكتشف الدردشات/القنوات المتاحة للبوت من آخر التحديثات.
+ * تيليجرام لا يمنح قائمة قنوات؛ لذلك نقرأ آخر الرسائل بعد إيقاف الويبهوك مؤقتاً.
+ */
+export async function discoverChats(
+  botToken: string,
+): Promise<{ id: string; title: string; type: string }[]> {
+  await tg(botToken, "deleteWebhook", { drop_pending_updates: false }).catch(() => null);
+  type Chat = { id: number; title?: string; username?: string; first_name?: string; type?: string };
+  const updates = await tg<{ message?: { chat?: Chat }; channel_post?: { chat?: Chat }; my_chat_member?: { chat?: Chat } }[]>(
+    botToken,
+    "getUpdates",
+    { limit: 100, timeout: 0 },
+  );
+  const seen = new Map<string, { id: string; title: string; type: string }>();
+  for (const update of updates) {
+    const chat = update.channel_post?.chat ?? update.message?.chat ?? update.my_chat_member?.chat;
+    if (!chat?.id) continue;
+    const id = String(chat.id);
+    if (seen.has(id)) continue;
+    seen.set(id, {
+      id,
+      title: chat.title ?? (chat.username ? `@${chat.username}` : (chat.first_name ?? id)),
+      type: chat.type ?? "chat",
+    });
+  }
+  return [...seen.values()];
 }
