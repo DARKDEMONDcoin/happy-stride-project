@@ -30,8 +30,8 @@ export const telegramStatus = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => wsInput.parse(input))
   .handler(async ({ data, context }) => {
     const admin = await assertOwner(context.supabase, data.workspaceId);
-    const { loadTelegramConfig } = await import("./telegram.server");
-    const [config, { data: links }] = await Promise.all([
+    const { loadTelegramConfig, platformBot } = await import("./telegram.server");
+    const [config, { data: links }, shared] = await Promise.all([
       loadTelegramConfig(admin, data.workspaceId),
       admin
         .from("command_links")
@@ -39,27 +39,38 @@ export const telegramStatus = createServerFn({ method: "POST" })
         .eq("workspace_id", data.workspaceId)
         .eq("channel", "telegram")
         .order("created_at", { ascending: true }),
+      import("./telegram.server").then(() => null),
     ]);
+    void shared;
+    const platform = await platformBot();
     return {
       connected: Boolean(config?.botToken),
+      usesSharedBot: Boolean(config?.shared),
       botUsername: config?.botUsername ?? "",
       chatId: config?.chatId ?? "",
       chatTitle: config?.chatTitle ?? "",
+      sharedBotAvailable: Boolean(platform),
+      sharedBotUsername: platform?.username ?? "",
       links: links ?? [],
     };
   });
 
-/** ربط بوت العميل بقناته: تحقق فوري من البوت والقناة ثم تسجيل الويبهوك. */
+/** ربط بوت العميل (أو بوت سهل الجاهز) بقناته: تحقق فوري ثم تسجيل الويبهوك. */
 export const connectTelegram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
         workspaceId: z.string().uuid(),
+        /** فارغ = استخدام بوت سهل الجاهز. */
         botToken: z
           .string()
           .trim()
-          .regex(/^\d{5,}:[A-Za-z0-9_-]{20,}$/, "توكن البوت غير صحيح — انسخه كاملاً من BotFather."),
+          .default("")
+          .refine(
+            (v) => v === "" || /^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(v),
+            "توكن البوت غير صحيح — انسخه كاملاً من BotFather.",
+          ),
         chatId: z.string().trim().min(2).max(120),
         sendTest: z.boolean().default(false),
       })
@@ -67,22 +78,29 @@ export const connectTelegram = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const admin = await assertOwner(context.supabase, data.workspaceId);
-    const { tg, saveTelegramConfig, registerWebhook } = await import("./telegram.server");
+    const { tg, saveTelegramConfig, registerWebhook, platformBotToken, ensureCommandLink } =
+      await import("./telegram.server");
 
-    const me = await tg<{ username?: string; first_name?: string }>(data.botToken, "getMe");
+    const shared = data.botToken === "";
+    const botToken = shared ? await platformBotToken() : data.botToken;
+    if (!botToken) {
+      throw new Error("بوت سهل الجاهز غير مُفعّل حالياً — اربط بوت شركتك من BotFather.");
+    }
+
+    const me = await tg<{ username?: string; first_name?: string }>(botToken, "getMe");
 
     // معرّف القناة: @username أو رقم (-100…)
     const chatId = data.chatId.startsWith("@") ? data.chatId : data.chatId.replace(/\s+/g, "");
     const chat = await tg<{ id: number; title?: string; username?: string; type?: string }>(
-      data.botToken,
+      botToken,
       "getChat",
       { chat_id: chatId },
     );
 
     const member = await tg<{ status?: string; can_post_messages?: boolean }>(
-      data.botToken,
+      botToken,
       "getChatMember",
-      { chat_id: chat.id, user_id: Number(data.botToken.split(":")[0]) },
+      { chat_id: chat.id, user_id: Number(botToken.split(":")[0]) },
     ).catch(() => ({ status: undefined, can_post_messages: undefined }));
     if (
       chat.type !== "private" &&
@@ -94,15 +112,18 @@ export const connectTelegram = createServerFn({ method: "POST" })
 
     const chatTitle = chat.title ?? (chat.username ? `@${chat.username}` : String(chat.id));
     await saveTelegramConfig(admin, data.workspaceId, {
-      botToken: data.botToken,
+      botToken: shared ? "" : botToken,
+      shared,
       botUsername: me.username ?? "",
       chatId: String(chat.id),
       chatTitle,
     });
-    await registerWebhook(data.workspaceId, data.botToken);
+    await registerWebhook(data.workspaceId, botToken, shared);
+    // القناة المربوطة تُسجَّل تلقائياً كقناة تحكّم حتى تظهر «مربوطة» بلا خطوات إضافية.
+    await ensureCommandLink(admin, data.workspaceId, String(chat.id), chatTitle);
 
     if (data.sendTest) {
-      await tg(data.botToken, "sendMessage", {
+      await tg(botToken, "sendMessage", {
         chat_id: chat.id,
         text: "✅ تم ربط القناة بنجاح — فريق سهل جاهز للنشر هنا.",
       });
@@ -113,6 +134,7 @@ export const connectTelegram = createServerFn({ method: "POST" })
       botUsername: me.username ?? "",
       chatTitle,
       chatId: String(chat.id),
+      shared,
     };
   });
 
