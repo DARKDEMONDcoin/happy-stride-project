@@ -21,10 +21,23 @@ const IMAGE_REQUEST =
 const MAKE =
   /(ولّد|ولد|ولدلي|ولّدلي|اعمل|إعمل|اعملي|سوّ|سو لي|سويلي|صمم|صمّم|ارسم|إرسم|اصنع|أنشئ|انشئ|جهّز|جهز|اكتبلي|عايز|عاوز|أريد|اريد|ابغى|أبغى|هات|اعطني|أعطني|create|generate|make|draw|design)/iu;
 
+/**
+ * رفض صريح للصورة: «بدون صورة»، «نص فقط»، «بلا تصميم»… وجودها يمنع أي توليد
+ * حتى لو ذكر المستخدم كلمة صورة في نفس الرسالة.
+ */
+const NO_IMAGE =
+  /(بدون|بلا|من\s*غير|مش\s*عايز|ما\s*أبغى|لا\s*أريد|بدون\s*ما\s*تعمل)\s*(صور[ةه]?|صور|تصميم|تصاميم|وسائط|ميديا|بوستر|جرافيك)|نص\s*(فقط|بس)|كتاب[ةه]\s*فقط|no\s*image|text\s*only|without\s*(an?\s*)?image/iu;
+
+/** هل طلب المستخدم صراحةً عدم إرفاق صورة؟ */
+export function refusesImageRequest(message: string): boolean {
+  return NO_IMAGE.test((message ?? "").trim());
+}
+
 /** هل الرسالة طلب صورة صريح؟ */
 export function wantsImageRequest(message: string): boolean {
   const text = (message ?? "").trim();
   if (!text) return false;
+  if (refusesImageRequest(text)) return false;
   if (!IMAGE_REQUEST.test(text)) return false;
   // ذكر كلمة «صورة» وحدها في سؤال ليس طلب توليد.
   return MAKE.test(text) || /^\s*(صورة|تصميم|بوستر|شعار|بانر)/u.test(text);

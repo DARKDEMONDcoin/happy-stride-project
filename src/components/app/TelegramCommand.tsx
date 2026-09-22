@@ -32,7 +32,6 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
   const [botToken, setBotToken] = useState("");
   const [mode, setMode] = useState<"shared" | "own" | null>(null);
   const [chatId, setChatId] = useState("");
-  const [sendTest, setSendTest] = useState(true);
   const [chats, setChats] = useState<{ id: string; title: string; type: string }[] | null>(null);
   const discover = useServerFn(discoverTelegramChats);
 
@@ -199,7 +198,7 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
             connectMutation.mutate({
               botToken: activeMode === "shared" ? "" : botToken.trim(),
               chatId: chatId.trim(),
-              sendTest,
+              sendTest: false,
             });
           }}
         >
@@ -251,14 +250,11 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
               ))}
             </ul>
           ) : null}
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={sendTest}
-              onChange={(e) => setSendTest(e.target.checked)}
-            />{" "}
-            أرسل رسالة تجربة للقناة
-          </label>
+          <p className="text-xs text-muted-foreground">
+            الربط صامت تماماً: لن تظهر أي رسالة نظام في قناتك، أول رسالة يراها متابعوك هي منشورك
+            أنت.
+          </p>
+
           <div className="flex flex-wrap gap-2">
             <button
               type="submit"

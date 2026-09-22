@@ -13,8 +13,16 @@ const IMAGE_INTENT =
 const EVENT_INTENT =
   /فوز|خسار[ةه]|مبارا[ةه]|ماتش|هدف|جونين|جول|بطول[ةه]|خبر|أخبار|اخبار|حدث|إعلان|اعلان|نتيج[ةه]/i;
 
+const NO_IMAGE =
+  /(بدون|بلا|من\s*غير|مش\s*عايز|لا\s*أريد)\s*(صور[ةه]?|صور|تصميم|وسائط|ميديا)|نص\s*(فقط|بس)|no\s*image|text\s*only/iu;
+
+/**
+ * الصورة تُرفَق فقط حين يطلبها صاحب العمل صراحةً.
+ * كان مجرد ذكر حدث (فوز، خبر…) يُشغّل توليد صورة لم يطلبها أحد.
+ */
 export function wantsImage(text: string): boolean {
-  return IMAGE_INTENT.test(text) || EVENT_INTENT.test(text);
+  if (NO_IMAGE.test(text)) return false;
+  return IMAGE_INTENT.test(text);
 }
 
 async function looksLikeImage(url: string, ms = 8000): Promise<boolean> {

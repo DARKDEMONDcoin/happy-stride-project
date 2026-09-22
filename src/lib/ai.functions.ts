@@ -432,10 +432,14 @@ export async function runEmployeeTurn(
       ) || data.message.length > 220;
 
     // نيّة الرسالة: عمل (مخرج جاهز) أم سؤال/دردشة يُجاب عليها فقط بلا فرض خدمات.
-    const { chatIntent, intentBlock, wantsImageRequest } = await import("./chat-intent");
+    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } = await import(
+      "./chat-intent"
+    );
     const intent = chatIntent(data.message);
+    /** رفض صريح للصورة: «بدون صورة» يمنع أي توليد مهما كان الموظف أو المخرج. */
+    const imageRefused = refusesImageRequest(data.message);
     /** طلب صورة صريح من المستخدم: تُولَّد صورة فعلية أياً كان الموظف. */
-    const explicitImage = intent === "work" && wantsImageRequest(data.message);
+    const explicitImage = intent === "work" && !imageRefused && wantsImageRequest(data.message);
     /** البثّ الحقيقي للطلبات الصريحة فقط — الأسئلة والدردشة تُجاب فوراً بلا بثّ. */
     const streaming = emit !== noEmit && intent === "work";
     // عقل الخبير: عمق التخصص + سؤال واحد بخيارات عند الغموض الجوهري فقط.
@@ -1164,11 +1168,11 @@ export async function runEmployeeTurn(
         ? userImagePrompt.length > 2
         : imageMode !== "off" &&
           intent === "work" &&
-          // طلب الصورة الصريح ينفّذه أي موظف؛ التوليد التلقائي يبقى للموظفين
-          // البصريين، وبشرط أن يكون المخرج نفسه بصرياً. وصف ميتا أو قائمة كلمات
-          // أو تدقيق تقني لا يحتاج صورة: توليدها هدر وقت وتكلفة بلا فائدة.
-          (explicitImage ||
-            (VISUAL_EMPLOYEES.has(data.employeeId) && deliverableWantsVisual(deliverables))) &&
+          !imageRefused &&
+          // لا توليد تلقائي أبداً: الصورة تُنتَج فقط حين يطلبها المستخدم صراحةً.
+          // كان الموظفون البصريون يولّدون صوراً بلا طلب فيهدرون وقتاً وتكلفة
+          // ويُرفقون صوراً لم يُردها أحد.
+          explicitImage &&
           attachments.every((a) => a.type !== "image");
     // توليد الصورة يبدأ الآن ويسير بالتوازي مع مراجعة الجودة — كانا متسلسلين فيضيفان
     // نحو دقيقة كاملة على كل رد بصري.
@@ -1185,12 +1189,8 @@ export async function runEmployeeTurn(
             const draft =
               (fromField ? fromField.trim() : null) ??
               extractImagePrompt(`${reply}\n${deliverables.map((d) => d.body ?? "").join("\n")}`);
-            const wantsVisual =
-              imageMode === "manual" ||
-              // طلب صريح للصورة: نولّدها دائماً حتى لو لم يُرجع النموذج وصفاً بصرياً.
-              explicitImage ||
-              Boolean(draft) ||
-              deliverables.some((d) => d.body && d.body.length > 80);
+            // لا تُولَّد صورة إلا بطلب صريح أو وصف كتبه المستخدم بنفسه.
+            const wantsVisual = imageMode === "manual" || explicitImage;
             if (wantsVisual) {
               emit({
                 type: "step",
@@ -1227,15 +1227,13 @@ export async function runEmployeeTurn(
           return imageUrl;
         })();
 
-    // مخرج واحد جاهز للنشر: نص المنشور نفسه هو أهم ما يراه المستخدم — نضعه في صدر الرد
-    // ونضع تعليق الموظف بعده خلف فاصل، حتى تلتقطه لوحة النشر نظيفاً بلا كلام موظف.
+    // مخرج واحد جاهز للنشر: المستخدم يريد المنشور نفسه فقط. كنا نلحق تعليق الموظف
+    // خلف فاصل «---» فيبدو الرد مزدحماً وتختلط لغة المساعد بنص المنشور.
     if (deliverables.length === 1) {
       const postBody = (deliverables[0]?.body ?? "").trim();
       const head = postBody.slice(0, 40);
       if (postBody.length > 60 && head && !reply.includes(head)) {
-        const note = reply.trim();
-        // «ملاحظة للمستخدم» تسمية داخلية لا يليق أن يقرأها المالك — نكتبها باسم الموظف.
-        reply = note ? `${postBody}\n\n---\n\n**ملاحظة من ${persona.name}:** ${note}` : postBody;
+        reply = postBody;
       }
     }
 
