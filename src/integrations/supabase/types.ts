@@ -45,8 +45,10 @@ export type Database = {
           label: string
           last_run_at: string | null
           last_status: string | null
+          locked_at: string | null
           next_run_at: string
           skill_id: string
+          timezone: string
           updated_at: string
           values: Json
           workspace_id: string
@@ -63,8 +65,10 @@ export type Database = {
           label: string
           last_run_at?: string | null
           last_status?: string | null
+          locked_at?: string | null
           next_run_at?: string
           skill_id: string
+          timezone?: string
           updated_at?: string
           values?: Json
           workspace_id: string
@@ -81,8 +85,10 @@ export type Database = {
           label?: string
           last_run_at?: string | null
           last_status?: string | null
+          locked_at?: string | null
           next_run_at?: string
           skill_id?: string
+          timezone?: string
           updated_at?: string
           values?: Json
           workspace_id?: string
