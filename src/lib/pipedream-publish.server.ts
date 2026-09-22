@@ -205,13 +205,16 @@ async function publishToPlatformInner(
   if (params.provider === "telegram") {
     const { loadTelegramConfig, telegramPublish } = await import("./telegram.server");
     const telegramConfig = await loadTelegramConfig(admin, params.workspaceId);
-    if (telegramConfig) {
-      const result = await telegramPublish(admin, params.workspaceId, {
-        text: params.text,
-        ...(firstImage ? { imageUrl: firstImage } : {}),
-      });
-      return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
+    if (!telegramConfig?.chatId) {
+      throw new Error(
+        "تيليجرام غير مربوط بالبوت المباشر بعد — افتح الإعدادات ← تيليجرام، اختر المحادثة ثم احفظ الربط.",
+      );
     }
+    const result = await telegramPublish(admin, params.workspaceId, {
+      text: params.text,
+      ...(firstImage ? { imageUrl: firstImage } : {}),
+    });
+    return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
   }
 
   // المسار الهجين: إن كان ميتا مربوطاً مباشرةً بتطبيقنا الخاص (توكن صفحة محفوظ)،

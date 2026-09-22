@@ -81,7 +81,7 @@ async function answerAsEmployee(
 
 /** المنصات المربوطة فعلياً في مساحة العمل. */
 async function connectedProviders(admin: Admin, workspaceId: string): Promise<string[]> {
-  const [{ data: linked }, { data: direct }, { data: meta }] = await Promise.all([
+  const [{ data: linked }, { data: direct }, { data: meta }, { data: telegramCredential }] = await Promise.all([
     admin
       .from("pipedream_accounts")
       .select("provider")
@@ -97,11 +97,18 @@ async function connectedProviders(admin: Admin, workspaceId: string): Promise<st
       .select("kind")
       .eq("workspace_id", workspaceId)
       .eq("status", "connected"),
+    admin
+      .from("integration_credentials")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("provider", "telegram")
+      .maybeSingle(),
   ]);
   const set = new Set<string>([
-    ...(linked ?? []).map((r) => r.provider),
-    ...(direct ?? []).map((r) => r.provider),
+    ...(linked ?? []).map((r) => r.provider).filter((provider) => provider !== "telegram"),
+    ...(direct ?? []).map((r) => r.provider).filter((provider) => provider !== "telegram"),
   ]);
+  if (telegramCredential) set.add("telegram");
   for (const row of meta ?? []) {
     if (row.kind === "instagram") set.add("instagram");
     else set.add("facebook");
