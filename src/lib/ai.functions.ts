@@ -1227,15 +1227,13 @@ export async function runEmployeeTurn(
           return imageUrl;
         })();
 
-    // مخرج واحد جاهز للنشر: نص المنشور نفسه هو أهم ما يراه المستخدم — نضعه في صدر الرد
-    // ونضع تعليق الموظف بعده خلف فاصل، حتى تلتقطه لوحة النشر نظيفاً بلا كلام موظف.
+    // مخرج واحد جاهز للنشر: المستخدم يريد المنشور نفسه فقط. كنا نلحق تعليق الموظف
+    // خلف فاصل «---» فيبدو الرد مزدحماً وتختلط لغة المساعد بنص المنشور.
     if (deliverables.length === 1) {
       const postBody = (deliverables[0]?.body ?? "").trim();
       const head = postBody.slice(0, 40);
       if (postBody.length > 60 && head && !reply.includes(head)) {
-        const note = reply.trim();
-        // «ملاحظة للمستخدم» تسمية داخلية لا يليق أن يقرأها المالك — نكتبها باسم الموظف.
-        reply = note ? `${postBody}\n\n---\n\n**ملاحظة من ${persona.name}:** ${note}` : postBody;
+        reply = postBody;
       }
     }
 
