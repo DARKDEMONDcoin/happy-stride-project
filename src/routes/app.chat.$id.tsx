@@ -116,7 +116,12 @@ function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   /** المؤقّت يُلغى عند الخروج: بدونه يُحدَّث زر مختفٍ بعد تبديل المحادثة. */
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   return (
     <button
       type="button"
@@ -154,7 +159,12 @@ function MessageActions({
   const [shared, setShared] = useState(false);
   /** المؤقّت يُلغى عند الخروج: بدونه يُحدَّث زر مختفٍ بعد تبديل المحادثة. */
   const shareTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (shareTimer.current) clearTimeout(shareTimer.current); }, []);
+  useEffect(
+    () => () => {
+      if (shareTimer.current) clearTimeout(shareTimer.current);
+    },
+    [],
+  );
   const btn =
     "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.7rem] font-bold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50";
   const share = async () => {
@@ -222,7 +232,6 @@ function looksPostable(body: string, request?: string | null): boolean {
     return text.length >= 40;
   return text.length > 220;
 }
-
 
 export const Route = createFileRoute("/app/chat/$id")({
   validateSearch: (s: Record<string, unknown>): { prompt?: string } =>
@@ -754,8 +763,13 @@ function ChatView({
     EMPLOYEE_COPY[id] ?? EMPLOYEE_COPY["sonny"]!;
   // أثناء وجود رسائل لا نشغّل مؤقتات كتابة مستمرة تعيد رسم صفحة المحادثة كلها.
   const hasMessages = Boolean((messages ?? []).length || pending);
-  const rotatingPlaceholder = useTypewriter(hasMessages ? [employeeCopy.prompts[0] ?? ""] : employeeCopy.prompts);
-  const rotatingGreeting = useTypewriter(hasMessages ? [employeeCopy.greetings[0] ?? ""] : employeeCopy.greetings, 2400);
+  const rotatingPlaceholder = useTypewriter(
+    hasMessages ? [employeeCopy.prompts[0] ?? ""] : employeeCopy.prompts,
+  );
+  const rotatingGreeting = useTypewriter(
+    hasMessages ? [employeeCopy.greetings[0] ?? ""] : employeeCopy.greetings,
+    2400,
+  );
   const userName = profile?.full_name?.trim().split(/\s+/)[0] || "صديقي";
   /** آخر رسالة فشل إرسالها — لزر «أعد المحاولة». */
   const [pendingText, setPendingText] = useState<string | null>(null);
@@ -1264,9 +1278,7 @@ function ChatView({
                             workspaceId={workspace.id}
                             employeeId={id}
                             taskId={savedTask}
-                            channel={
-                              requestedPublishTargets(priorRequest)[0] ?? "instagram"
-                            }
+                            channel={requestedPublishTargets(priorRequest)[0] ?? "instagram"}
                             request={priorRequest}
                             body={m.body}
                           />
@@ -1281,7 +1293,11 @@ function ChatView({
                           const nextIsAssistant = arr[idx + 1] && arr[idx + 1]!.role !== "user";
                           if (isUser && nextIsAssistant) return null;
                           return (
-                            <HandoffCard handoff={handoff} request={req} currentName={member.name} />
+                            <HandoffCard
+                              handoff={handoff}
+                              request={req}
+                              currentName={member.name}
+                            />
                           );
                         })()}
 

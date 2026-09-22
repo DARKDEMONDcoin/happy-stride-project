@@ -296,7 +296,6 @@ export async function telegramPublish(
   return { chatId: config.chatId, messageId: sent.message_id };
 }
 
-
 /** رسالة خاصة لأي دردشة (الردود على أوامر صاحب العمل والإشعارات). */
 export async function telegramReply(botToken: string, chatId: string | number, text: string) {
   const body = text.length > 4096 ? `${text.slice(0, 4080)}…` : text;
@@ -312,11 +311,13 @@ export async function discoverChats(
 ): Promise<{ id: string; title: string; type: string }[]> {
   await tg(botToken, "deleteWebhook", { drop_pending_updates: false }).catch(() => null);
   type Chat = { id: number; title?: string; username?: string; first_name?: string; type?: string };
-  const updates = await tg<{ message?: { chat?: Chat }; channel_post?: { chat?: Chat }; my_chat_member?: { chat?: Chat } }[]>(
-    botToken,
-    "getUpdates",
-    { limit: 100, timeout: 0 },
-  );
+  const updates = await tg<
+    {
+      message?: { chat?: Chat };
+      channel_post?: { chat?: Chat };
+      my_chat_member?: { chat?: Chat };
+    }[]
+  >(botToken, "getUpdates", { limit: 100, timeout: 0 });
   const seen = new Map<string, { id: string; title: string; type: string }>();
   for (const update of updates) {
     const chat = update.channel_post?.chat ?? update.message?.chat ?? update.my_chat_member?.chat;

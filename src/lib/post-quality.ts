@@ -132,7 +132,8 @@ const CTA =
 const HOOK_QUESTION = /[؟?]/u;
 const HOOK_NUMBER = /(\d|[٠-٩]|نصف|ضعف|أول|آخر)/u;
 const HOOK_DIRECT = /(أنت|إنت|لو\s|إذا\s|تخيل|تخيّل|توقف|بلاش|لا\s+ت|كفاية|سر\s|٣|3\s+أسباب|هل\s)/u;
-const WEAK_OPENING = /^(مرحباً|مرحبا|أهلاً|اهلا|يسرنا|يسعدنا|نقدّم لكم|نقدم لكم|هل تبحث عن|في عالم اليوم|في عصر)/iu;
+const WEAK_OPENING =
+  /^(مرحباً|مرحبا|أهلاً|اهلا|يسرنا|يسعدنا|نقدّم لكم|نقدم لكم|هل تبحث عن|في عالم اليوم|في عصر)/iu;
 
 /** قيمة واضحة للقارئ: فائدة، حل مشكلة، توفير، تعلّم، أو نتيجة ملموسة. */
 const VALUE_PROMISE =
@@ -459,8 +460,7 @@ export function scorePost({
   );
 
   const paragraphCount = lines.length;
-  const scannable =
-    (chars >= 20 && chars < 180) || (paragraphCount >= 2 && paragraphCount <= 8);
+  const scannable = (chars >= 20 && chars < 180) || (paragraphCount >= 2 && paragraphCount <= 8);
   add(
     "scan",
     "بنية سريعة المسح",

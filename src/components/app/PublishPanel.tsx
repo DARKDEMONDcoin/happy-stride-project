@@ -221,11 +221,11 @@ export function PublishPanel({
       ),
     ).then(() => {
       if (failed)
-        setNote(`أُزيلت من المنشور، لكن تعذّر حذف ${failed.toLocaleString("ar-EG")} ملف من المخزن.`);
+        setNote(
+          `أُزيلت من المنشور، لكن تعذّر حذف ${failed.toLocaleString("ar-EG")} ملف من المخزن.`,
+        );
     });
   };
-
-
 
   // مواعيد متعددة: المستخدم يختار الكمية والأوقات التي يريدها.
   const [slots, setSlots] = useState<string[]>(() => [
@@ -379,7 +379,6 @@ export function PublishPanel({
       );
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
-
   };
 
   /** يولّد صوراً: تلقائياً من نص المنشور، أو من وصف كتبه المستخدم بنفسه. */
@@ -444,7 +443,12 @@ export function PublishPanel({
           workspaceId,
           prompt,
           count: scenes,
-          aspect: videoAspect === "landscape" ? "landscape" : videoAspect === "square" ? "square" : "story",
+          aspect:
+            videoAspect === "landscape"
+              ? "landscape"
+              : videoAspect === "square"
+                ? "square"
+                : "story",
           mode: "literal",
         },
       });
@@ -481,7 +485,6 @@ export function PublishPanel({
       setVideoProgress(0);
     }
   };
-
 
   const run = async (mode: "now" | "later", providers = active) => {
     if (!providers.length) return;
@@ -531,11 +534,17 @@ export function PublishPanel({
           failed.push(`${appLabel(provider)}: يحتاج صورة أو فيديو`);
           continue;
         }
-        if (videoUrl && provider !== "facebook" && provider !== "instagram" && provider !== "telegram") {
+        if (
+          videoUrl &&
+          provider !== "facebook" &&
+          provider !== "instagram" &&
+          provider !== "telegram"
+        ) {
           failed.push(`${appLabel(provider)}: نشر الفيديو غير متاح على هذه المنصة`);
           continue;
         }
-        const multi = provider === "facebook" || provider === "instagram" || provider === "telegram";
+        const multi =
+          provider === "facebook" || provider === "instagram" || provider === "telegram";
         const base = {
           workspaceId,
           employeeId,
@@ -686,96 +695,250 @@ export function PublishPanel({
         </div>
 
         <div className="post-media-tool-grid mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading || media.length >= 10} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary disabled:opacity-60">
-            {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <ImagePlus className="size-3.5" />}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading || media.length >= 10}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary disabled:opacity-60"
+          >
+            {uploading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <ImagePlus className="size-3.5" />
+            )}
             ارفع صوراً/فيديو
           </button>
-          <button type="button" onClick={() => void runGenerate("auto")} disabled={!!aiBusy || media.length >= 10} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary disabled:opacity-60">
-            {aiBusy === "auto" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+          <button
+            type="button"
+            onClick={() => void runGenerate("auto")}
+            disabled={!!aiBusy || media.length >= 10}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary disabled:opacity-60"
+          >
+            {aiBusy === "auto" ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
             ولّد صورة من نص المنشور
           </button>
-          <button type="button" onClick={() => setAiOpen((v) => !v)} aria-expanded={aiOpen} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${aiOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}>
+          <button
+            type="button"
+            onClick={() => setAiOpen((v) => !v)}
+            aria-expanded={aiOpen}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${aiOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+          >
             <Wand2 className="size-3.5" /> ولّد صورة بوصفي
           </button>
           {generated && !media.some((m) => m.url === generated) ? (
-            <button type="button" onClick={() => addMedia([{ url: generated, kind: "image", label: "الصورة المولّدة" }])} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary">
+            <button
+              type="button"
+              onClick={() =>
+                addMedia([{ url: generated, kind: "image", label: "الصورة المولّدة" }])
+              }
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary"
+            >
               <Sparkles className="size-3.5" /> أعد الصورة المولّدة
             </button>
           ) : null}
-          <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" className="hidden" onChange={(e) => void onFiles(e.target.files)} />
-          <button type="button" onClick={() => setReelOpen((v) => !v)} aria-expanded={reelOpen} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${reelOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}>
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
+            className="hidden"
+            onChange={(e) => void onFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => setReelOpen((v) => !v)}
+            aria-expanded={reelOpen}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${reelOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+          >
             <Film className="size-3.5" /> استوديو الريلز من صورك
           </button>
-          <button type="button" onClick={() => setVideoOpen((v) => !v)} aria-expanded={videoOpen} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${videoOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}>
+          <button
+            type="button"
+            onClick={() => setVideoOpen((v) => !v)}
+            aria-expanded={videoOpen}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${videoOpen ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+          >
             <Clapperboard className="size-3.5" /> فيديو بالذكاء الاصطناعي
           </button>
         </div>
 
         {videoOpen ? (
           <div className="mt-3 rounded-2xl border border-dashed border-border bg-card/70 p-3">
-            <p className="text-[11px] font-bold text-muted-foreground">فيديو بالذكاء الاصطناعي: نولّد مشاهد الوصف ثم نركّبها فيديو جاهزاً للنشر — مجاناً.</p>
-            <textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} rows={2} dir="auto" placeholder="صف الفيديو: مثلاً «لقطة قريبة لفنجان قهوة مع بخار ونص ترويجي»" className="mt-2 w-full resize-none rounded-xl border border-border bg-background p-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20" />
+            <p className="text-[11px] font-bold text-muted-foreground">
+              فيديو بالذكاء الاصطناعي: نولّد مشاهد الوصف ثم نركّبها فيديو جاهزاً للنشر — مجاناً.
+            </p>
+            <textarea
+              value={videoPrompt}
+              onChange={(e) => setVideoPrompt(e.target.value)}
+              rows={2}
+              dir="auto"
+              placeholder="صف الفيديو: مثلاً «لقطة قريبة لفنجان قهوة مع بخار ونص ترويجي»"
+              className="mt-2 w-full resize-none rounded-xl border border-border bg-background p-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20"
+            />
             <div className="post-media-settings mt-2 flex flex-wrap items-center gap-2">
-              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">المدة<select value={videoSeconds} onChange={(e) => setVideoSeconds(Number(e.target.value))} className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground">{[5, 8, 10, 15].map((n) => <option key={n} value={n}>{n} ثانية</option>)}</select></label>
-              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">المقاس<select value={videoAspect} onChange={(e) => setVideoAspect(e.target.value as typeof videoAspect)} className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"><option value="story">ريلز / ستوري (9:16)</option><option value="square">مربع (1:1)</option><option value="landscape">عرضي (16:9)</option></select></label>
-              <button type="button" onClick={() => void runVideo()} disabled={videoBusy || !videoPrompt.trim() || media.length >= 10} className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background disabled:opacity-60">{videoBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Clapperboard className="size-3.5" />}{videoBusy ? `جارٍ التركيب ${Math.round(videoProgress * 100)}%` : "ولّد الفيديو"}</button>
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                المدة
+                <select
+                  value={videoSeconds}
+                  onChange={(e) => setVideoSeconds(Number(e.target.value))}
+                  className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"
+                >
+                  {[5, 8, 10, 15].map((n) => (
+                    <option key={n} value={n}>
+                      {n} ثانية
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                المقاس
+                <select
+                  value={videoAspect}
+                  onChange={(e) => setVideoAspect(e.target.value as typeof videoAspect)}
+                  className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"
+                >
+                  <option value="story">ريلز / ستوري (9:16)</option>
+                  <option value="square">مربع (1:1)</option>
+                  <option value="landscape">عرضي (16:9)</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => void runVideo()}
+                disabled={videoBusy || !videoPrompt.trim() || media.length >= 10}
+                className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background disabled:opacity-60"
+              >
+                {videoBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Clapperboard className="size-3.5" />
+                )}
+                {videoBusy ? `جارٍ التركيب ${Math.round(videoProgress * 100)}%` : "ولّد الفيديو"}
+              </button>
             </div>
           </div>
-
         ) : null}
 
         {aiOpen ? (
           <div className="mt-3 rounded-2xl border border-border bg-card/70 p-3">
-            <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows={2} dir="auto" placeholder="صف الصورة التي تريدها: مثلاً «طبق كبسة بلحم على طاولة خشبية بإضاءة دافئة»" className="w-full resize-none rounded-xl border border-border bg-background p-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20" />
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              rows={2}
+              dir="auto"
+              placeholder="صف الصورة التي تريدها: مثلاً «طبق كبسة بلحم على طاولة خشبية بإضاءة دافئة»"
+              className="w-full resize-none rounded-xl border border-border bg-background p-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20"
+            />
             <div className="post-media-settings mt-2 flex flex-wrap items-center gap-2">
-              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">عدد الصور<select value={aiCount} onChange={(e) => setAiCount(Number(e.target.value))} className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground">{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
-              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">المقاس<select value={aiAspect} onChange={(e) => setAiAspect(e.target.value as typeof aiAspect)} className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"><option value="square">مربع (منشور)</option><option value="portrait">طولي</option><option value="landscape">عرضي</option><option value="story">ستوري / ريلز</option></select></label>
-              <button type="button" onClick={() => void runGenerate("manual")} disabled={!!aiBusy || !aiPrompt.trim()} className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background disabled:opacity-60">{aiBusy === "manual" ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />} ولّد الآن</button>
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                عدد الصور
+                <select
+                  value={aiCount}
+                  onChange={(e) => setAiCount(Number(e.target.value))}
+                  className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"
+                >
+                  {[1, 2, 3, 4].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                المقاس
+                <select
+                  value={aiAspect}
+                  onChange={(e) => setAiAspect(e.target.value as typeof aiAspect)}
+                  className="rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-foreground"
+                >
+                  <option value="square">مربع (منشور)</option>
+                  <option value="portrait">طولي</option>
+                  <option value="landscape">عرضي</option>
+                  <option value="story">ستوري / ريلز</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => void runGenerate("manual")}
+                disabled={!!aiBusy || !aiPrompt.trim()}
+                className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background disabled:opacity-60"
+              >
+                {aiBusy === "manual" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Wand2 className="size-3.5" />
+                )}{" "}
+                ولّد الآن
+              </button>
             </div>
           </div>
         ) : null}
 
-        {media.some((m) => m.kind === "video") ? <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Film className="size-3.5" /> الفيديو يُنشر على فيسبوك وإنستجرام (Reels عمودي حتى ٩٠ ثانية).</p> : null}
-        {media.length > 1 ? <p className="mt-2 text-[11px] text-muted-foreground">أكثر من وسيطة تُنشر كألبوم على فيسبوك وكاروسيل على إنستجرام — أما باقي المنصات فتأخذ الصورة الأولى.</p> : null}
-        {reelOpen || media.filter((item) => item.kind === "image").length >= 2 ? <div className="mt-3"><ReelStudio workspaceId={workspaceId} images={media.filter((item) => item.kind === "image").map((item) => item.url)} aspect={aiAspect} attached={media.map((item) => item.url)} onAttach={(url) => addMedia([{ url, kind: "video", label: "ريلز من صورك" }])} /></div> : null}
+        {media.some((m) => m.kind === "video") ? (
+          <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Film className="size-3.5" /> الفيديو يُنشر على فيسبوك وإنستجرام (Reels عمودي حتى ٩٠
+            ثانية).
+          </p>
+        ) : null}
+        {media.length > 1 ? (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            أكثر من وسيطة تُنشر كألبوم على فيسبوك وكاروسيل على إنستجرام — أما باقي المنصات فتأخذ
+            الصورة الأولى.
+          </p>
+        ) : null}
+        {reelOpen || media.filter((item) => item.kind === "image").length >= 2 ? (
+          <div className="mt-3">
+            <ReelStudio
+              workspaceId={workspaceId}
+              images={media.filter((item) => item.kind === "image").map((item) => item.url)}
+              aspect={aiAspect}
+              attached={media.map((item) => item.url)}
+              onAttach={(url) => addMedia([{ url, kind: "video", label: "ريلز من صورك" }])}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* المنصات: كل منصات النشر المدعومة كخيارات — والمطلوب صراحةً مُبرَز */}
       <div>
         <span className="mb-2 block text-xs font-bold text-muted-foreground">انشر على</span>
         <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
-        {(PUBLISHABLE as readonly string[]).map((p) =>
-          connected.includes(p as never) ? (
-            <button
-              key={p}
-              type="button"
-              onClick={() => toggle(p)}
-              aria-pressed={active.includes(p)}
-              className={`${chipClass(active.includes(p))} min-w-0 justify-center px-2 sm:px-3`}
-            >
-              <AppIcon name={p} className="size-3.5" />
-              {appLabel(p)}
-              {requested.includes(p as never) ? (
-                <span className="rounded-full bg-primary/20 px-1.5 text-[10px] text-primary">
-                  طلبته
-                </span>
-              ) : null}
-            </button>
-          ) : (
-            <ConnectNow
-              key={p}
-              workspaceId={workspaceId}
-              provider={p}
-              size="sm"
-              label={`${providerLabel(p)} · اربطه`}
+          {(PUBLISHABLE as readonly string[]).map((p) =>
+            connected.includes(p as never) ? (
+              <button
+                key={p}
+                type="button"
+                onClick={() => toggle(p)}
+                aria-pressed={active.includes(p)}
+                className={`${chipClass(active.includes(p))} min-w-0 justify-center px-2 sm:px-3`}
+              >
+                <AppIcon name={p} className="size-3.5" />
+                {appLabel(p)}
+                {requested.includes(p as never) ? (
+                  <span className="rounded-full bg-primary/20 px-1.5 text-[10px] text-primary">
+                    طلبته
+                  </span>
+                ) : null}
+              </button>
+            ) : (
+              <ConnectNow
+                key={p}
+                workspaceId={workspaceId}
+                provider={p}
+                size="sm"
+                label={`${providerLabel(p)} · اربطه`}
                 className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full border border-dashed px-2 py-1.5 text-xs font-bold hover:bg-secondary sm:px-3 ${
-                requested.includes(p as never)
-                  ? "border-amber/60 bg-amber/10 text-ink-soft"
-                  : "border-border text-muted-foreground"
-              }`}
-            />
-          ),
-        )}
+                  requested.includes(p as never)
+                    ? "border-amber/60 bg-amber/10 text-ink-soft"
+                    : "border-border text-muted-foreground"
+                }`}
+              />
+            ),
+          )}
         </div>
       </div>
       {missing.length && !active.length ? (
@@ -951,13 +1114,15 @@ export function PublishPanel({
                     <b>{day.getDate().toLocaleString("ar-EG")}</b>
                     {entries.length ? (
                       <span className="post-calendar-day-thumbs">
-                        {entries.slice(0, 3).map((entry) =>
-                          entry.image ? (
-                            <img key={entry.id} src={entry.image} alt="" loading="lazy" />
-                          ) : (
-                            <i key={entry.id} className={`dot is-${entry.status}`} />
-                          ),
-                        )}
+                        {entries
+                          .slice(0, 3)
+                          .map((entry) =>
+                            entry.image ? (
+                              <img key={entry.id} src={entry.image} alt="" loading="lazy" />
+                            ) : (
+                              <i key={entry.id} className={`dot is-${entry.status}`} />
+                            ),
+                          )}
                         {entries.length > 3 ? <em>+{entries.length - 3}</em> : null}
                       </span>
                     ) : null}
@@ -1019,7 +1184,10 @@ export function PublishPanel({
             const setPart = (next: string) =>
               setSlots((all) => all.map((v, j) => (j === i ? next : v)));
             return (
-              <div key={i} className="post-schedule-slot rounded-2xl border border-border bg-card/60 p-3">
+              <div
+                key={i}
+                className="post-schedule-slot rounded-2xl border border-border bg-card/60 p-3"
+              >
                 <div className="post-schedule-row flex flex-wrap items-center gap-2">
                   <input
                     type="date"
@@ -1147,7 +1315,6 @@ export function PublishPanel({
             {bestTimes.note}
           </p>
         ) : null}
-
       </div>
 
       {/* الإجراءات */}

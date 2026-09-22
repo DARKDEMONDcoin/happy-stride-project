@@ -432,9 +432,8 @@ export async function runEmployeeTurn(
       ) || data.message.length > 220;
 
     // نيّة الرسالة: عمل (مخرج جاهز) أم سؤال/دردشة يُجاب عليها فقط بلا فرض خدمات.
-    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } = await import(
-      "./chat-intent"
-    );
+    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } =
+      await import("./chat-intent");
     const intent = chatIntent(data.message);
     /** رفض صريح للصورة: «بدون صورة» يمنع أي توليد مهما كان الموظف أو المخرج. */
     const imageRefused = refusesImageRequest(data.message);
@@ -1137,7 +1136,6 @@ export async function runEmployeeTurn(
           // تمرير النبرة هنا كان يطلب من المصلّح الكتابة بلهجة اسمها «ودود ومحترف».
           ...(ownerDialect ? { dialect: ownerDialect } : {}),
 
-
           // وسائط حقيقية فقط: مرفقات المستخدم أو صورة ستُولَّد فعلاً.
           hasMedia: Boolean(data.attachments?.length) || (data.imageMode ?? "auto") !== "off",
         })) as typeof deliverables;
@@ -1229,7 +1227,6 @@ export async function runEmployeeTurn(
       const postBody = (deliverables[0]?.body ?? "").trim();
       if (postBody.length > 60) reply = postBody;
     }
-
 
     reply = fillPlaceholders(reply, workspace.name, ws.website ?? null, brandProducts);
     reply = sanitizeActionClaims(reply, connected);
