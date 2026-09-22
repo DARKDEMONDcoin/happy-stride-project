@@ -67,6 +67,7 @@ export const PROVIDER_LABEL: Record<string, string> = {
   x: "إكس (تويتر)",
   pinterest: "بنترست",
   youtube: "يوتيوب",
+  telegram: "تيليجرام",
   tiktok: "تيك توك",
   snapchat: "سناب شات",
   threads: "ثريدز",
