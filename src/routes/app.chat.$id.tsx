@@ -207,15 +207,6 @@ function MessageActions({
   );
 }
 
-/** آخر رسالة كتبها المستخدم قبل رد الموظف — لنعرف ما طلبه بالضبط (المنصة مثلاً). */
-function lastUserBefore(arr: { role: string; body: string }[], idx: number): string {
-  for (let i = idx - 1; i >= 0; i -= 1) {
-    const m = arr[i];
-    if (m && m.role === "user") return m.body;
-  }
-  return "";
-}
-
 /**
  * يقرّر إن كان رد الموظف منشوراً قابلاً للنشر (لا سؤالاً ولا شرحاً قصيراً).
  * يُطبَّق على كل الموظفين بالتساوي: المنشور القصير (تغريدة/كابشن/ستوري) مقبول
