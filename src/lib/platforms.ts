@@ -11,6 +11,7 @@ export const PUBLISHABLE = [
   "x",
   "pinterest",
   "youtube",
+  "telegram",
 ] as const;
 export type Publishable = (typeof PUBLISHABLE)[number];
 

@@ -67,6 +67,7 @@ import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as AppChatIndexRouteImport } from './routes/app.chat.index'
 import { Route as AppChatIdRouteImport } from './routes/app.chat.$id'
 import { Route as ApiPublicMetaCallbackRouteImport } from './routes/api/public/meta.callback'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram.webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -363,6 +364,12 @@ const ApiPublicMetaCallbackRoute = ApiPublicMetaCallbackRouteImport.update({
   path: '/api/public/meta/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -429,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat/': typeof AppChatIndexRoute
   '/api/public/meta/callback': typeof ApiPublicMetaCallbackRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -489,6 +497,7 @@ export interface FileRoutesByTo {
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat': typeof AppChatIndexRoute
   '/api/public/meta/callback': typeof ApiPublicMetaCallbackRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
@@ -551,6 +560,7 @@ export interface FileRoutesById {
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat/': typeof AppChatIndexRoute
   '/api/public/meta/callback': typeof ApiPublicMetaCallbackRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
@@ -614,6 +624,7 @@ export interface FileRouteTypes {
     | '/app/chat/$id'
     | '/app/chat/'
     | '/api/public/meta/callback'
+    | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -674,6 +685,7 @@ export interface FileRouteTypes {
     | '/app/chat/$id'
     | '/app/chat'
     | '/api/public/meta/callback'
+    | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
@@ -735,6 +747,7 @@ export interface FileRouteTypes {
     | '/app/chat/$id'
     | '/app/chat/'
     | '/api/public/meta/callback'
+    | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -779,6 +792,7 @@ export interface RootRouteChildren {
   ApiPublicSocialQueueRoute: typeof ApiPublicSocialQueueRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicMetaCallbackRoute: typeof ApiPublicMetaCallbackRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -1190,6 +1204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -1285,6 +1306,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSocialQueueRoute: ApiPublicSocialQueueRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicMetaCallbackRoute: ApiPublicMetaCallbackRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
