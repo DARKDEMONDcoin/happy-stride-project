@@ -146,37 +146,71 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
         <h3 className="text-sm font-black">اربط البوت والقناة</h3>
         {data?.connected ? (
           <p className="text-sm font-semibold text-jade-deep">
-            مربوط{data.botUsername ? ` · @${data.botUsername}` : ""}
+            مربوط · {data.usesSharedBot ? "بوت سهل الجاهز" : "بوت شركتك"}
+            {data.botUsername ? ` · @${data.botUsername}` : ""}
             {data.chatTitle ? ` · ${data.chatTitle}` : ""}
           </p>
-        ) : (
+        ) : null}
+
+        {data?.sharedBotAvailable ? (
+          <div className="flex flex-wrap gap-2">
+            {(["shared", "own"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={`rounded-2xl border px-4 py-2 text-sm font-bold ${
+                  activeMode === m ? "border-jade bg-jade/12" : "border-border hover:bg-secondary"
+                }`}
+              >
+                {m === "shared" ? "بوت سهل الجاهز (بدون إعداد)" : "بوت شركتك من BotFather"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {!data?.connected ? (
           <ol className="list-decimal space-y-1 pe-5 text-sm text-muted-foreground">
-            <li>افتح @BotFather في تيليجرام وأنشئ بوتاً باسم شركتك، وانسخ التوكن.</li>
-            <li>أضف البوت مشرفاً في قناتك أو مجموعتك بصلاحية نشر الرسائل.</li>
-            <li>اكتب معرّف القناة (مثل ‎@mychannel) أو رقمها، ثم اضغط ربط.</li>
+            {activeMode === "shared" ? (
+              <>
+                <li>
+                  أضف بوت سهل{data?.sharedBotUsername ? ` @${data.sharedBotUsername}` : ""} مشرفاً في
+                  قناتك بصلاحية نشر الرسائل (أو ابعت له /start في محادثة خاصة).
+                </li>
+                <li>اكتب معرّف القناة (مثل ‎@mychannel) أو رقمها، ثم اضغط ربط.</li>
+              </>
+            ) : (
+              <>
+                <li>افتح @BotFather في تيليجرام وأنشئ بوتاً باسم شركتك، وانسخ التوكن.</li>
+                <li>أضف البوت مشرفاً في قناتك أو مجموعتك بصلاحية نشر الرسائل.</li>
+                <li>اكتب معرّف القناة (مثل ‎@mychannel) أو رقمها، ثم اضغط ربط.</li>
+              </>
+            )}
           </ol>
-        )}
+        ) : null}
 
         <form
           className="grid gap-2 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
             connectMutation.mutate({
-              botToken: botToken.trim(),
+              botToken: activeMode === "shared" ? "" : botToken.trim(),
               chatId: chatId.trim(),
               sendTest,
             });
           }}
         >
-          <input
-            dir="ltr"
-            required
-            value={botToken}
-            onChange={(e) => setBotToken(e.target.value)}
-            placeholder="123456789:AA..."
-            className={field}
-            autoComplete="off"
-          />
+          {activeMode === "own" ? (
+            <input
+              dir="ltr"
+              required
+              value={botToken}
+              onChange={(e) => setBotToken(e.target.value)}
+              placeholder="123456789:AA..."
+              className={field}
+              autoComplete="off"
+            />
+          ) : null}
           <div className="flex gap-2">
             <input
               dir="ltr"
@@ -186,14 +220,16 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
               placeholder="@mychannel"
               className={field}
             />
-            <button
-              type="button"
-              onClick={() => discoverMutation.mutate()}
-              disabled={discoverMutation.isPending || !botToken.trim()}
-              className="shrink-0 rounded-2xl border border-border px-4 py-3 text-sm font-bold hover:bg-secondary disabled:opacity-60"
-            >
-              {discoverMutation.isPending ? "…" : "اكتشف"}
-            </button>
+            {activeMode === "own" ? (
+              <button
+                type="button"
+                onClick={() => discoverMutation.mutate()}
+                disabled={discoverMutation.isPending || !botToken.trim()}
+                className="shrink-0 rounded-2xl border border-border px-4 py-3 text-sm font-bold hover:bg-secondary disabled:opacity-60"
+              >
+                {discoverMutation.isPending ? "…" : "اكتشف"}
+              </button>
+            ) : null}
           </div>
           {chats?.length ? (
             <ul className="sm:col-span-2 flex flex-wrap gap-2">
