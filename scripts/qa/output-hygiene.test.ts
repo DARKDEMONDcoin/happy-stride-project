@@ -79,3 +79,14 @@ test("publish guard blocks guaranteed-result and medical claims", () => {
   expect(publishBlockers("أرباح مضمونة من أول شهر.").length).toBeGreaterThan(0);
   expect(publishBlockers("جرّب طبق السمك الطازج عندنا اليوم في جدة.")).toEqual([]);
 });
+
+test("hashtags survive when an owner note sits above them", () => {
+  const dirty = "خصم ٢٠٪ على وجبات السمك.\n\nمؤشر القياس بعد ٤٨ ساعة: عدد الرسائل.\n\n#سمك #عرض";
+  const clean = sanitizePostBody(dirty);
+  expect(clean).toContain("#سمك");
+  expect(clean).not.toContain("مؤشر القياس");
+});
+
+test("a standalone label line above the post is removed", () => {
+  expect(sanitizePostBody("إعلان\n\nخصم ٢٠٪ اليوم فقط.")).toBe("خصم ٢٠٪ اليوم فقط.");
+});
