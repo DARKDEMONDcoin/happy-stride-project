@@ -274,12 +274,31 @@ function slotDates(input: PlanInput): { at: Date; provider: string }[] {
 }
 
 
+/**
+ * المنطقة الزمنية المعتمدة للعلامة: ما اختاره المالك في الطيار الآلي أولاً،
+ * ثم استنتاجها من الدولة — حتى لا تختلف ساعة التقويم عن ساعة الجدولة.
+ */
+export async function brandTimeZone(
+  admin: Admin,
+  workspaceId: string,
+  country?: string | null,
+): Promise<string> {
+  const { data } = await admin
+    .from("social_autopilot")
+    .select("timezone")
+    .eq("workspace_id", workspaceId)
+    .limit(1)
+    .maybeSingle();
+  return data?.timezone?.trim() || timezoneForCountry(country);
+}
+
 export async function planCalendar(
   admin: Admin,
   input: PlanInput,
 ): Promise<{ created: number; batch: string }> {
-  const slots = slotDates(input).slice(0, 45);
   const ctx = await workspaceContext(admin, input.workspaceId);
+  const timeZone = await brandTimeZone(admin, input.workspaceId, ctx.ws.country);
+  const slots = slotDates({ ...input, timezone: timeZone }).slice(0, 45);
   const { freeChat } = await import("./nour-research.server");
 
   const recentTitles = ctx.recent
@@ -288,7 +307,6 @@ export async function planCalendar(
     .slice(0, 15);
 
   const dialect = await resolveDialect(admin, input.workspaceId, input.dialect);
-  const timeZone = timezoneForCountry(ctx.ws.country);
   const pulse = await ambientPulse(
     { country: ctx.ws.country, timeZone, topics: [input.topic ?? ctx.ws.industry] },
     9_000,
