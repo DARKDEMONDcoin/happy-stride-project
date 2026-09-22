@@ -891,8 +891,8 @@ export function PublishPanel({
         ) : null}
         {media.length > 1 ? (
           <p className="mt-2 text-[11px] text-muted-foreground">
-            أكثر من وسيطة تُنشر كألبوم على فيسبوك وكاروسيل على إنستجرام — أما باقي المنصات فتأخذ
-            الصورة الأولى.
+            أكثر من وسيطة تُنشر مع النص كألبوم على فيسبوك وتيليجرام، وكاروسيل على إنستجرام — أما
+            باقي المنصات فتأخذ الصورة الأولى.
           </p>
         ) : null}
         {reelOpen || media.filter((item) => item.kind === "image").length >= 2 ? (
