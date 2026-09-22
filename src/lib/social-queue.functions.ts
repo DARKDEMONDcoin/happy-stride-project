@@ -216,6 +216,8 @@ export const updateSocialPost = createServerFn({ method: "POST" })
 
     if (data.action === "reschedule") {
       if (!data.scheduledAt) throw new Error("الموعد الجديد مطلوب.");
+      if (new Date(data.scheduledAt).getTime() <= Date.now())
+        throw new Error("اختر موعداً قادماً للجدولة.");
       const { error } = await admin
         .from("social_posts")
         .update({ scheduled_at: data.scheduledAt, status: "scheduled", locked_at: null })
