@@ -37,6 +37,15 @@ async function assertConnected(
     .order("connected_at", { ascending: false })
     .limit(1);
   let connected = Boolean(account?.length);
+  if (!connected && provider === "telegram") {
+    const { data: direct } = await admin
+      .from("integration_credentials")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("provider", "telegram")
+      .limit(1);
+    connected = Boolean(direct?.length);
+  }
   if (!connected && (provider === "facebook" || provider === "instagram")) {
     const { data: meta } = await admin
       .from("meta_connections")
