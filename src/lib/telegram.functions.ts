@@ -120,12 +120,9 @@ export const connectTelegram = createServerFn({ method: "POST" })
     // القناة المربوطة تُسجَّل تلقائياً كقناة تحكّم حتى تظهر «مربوطة» بلا خطوات إضافية.
     await ensureCommandLink(admin, data.workspaceId, String(chat.id), chatTitle);
 
-    if (data.sendTest) {
-      await tg(botToken, "sendMessage", {
-        chat_id: chat.id,
-        text: "✅ تم ربط القناة بنجاح — فريق سهل جاهز للنشر هنا.",
-      });
-    }
+    // لا تُرسَل أي رسالة تأكيد إلى القناة: متابعو العميل يجب ألا يروا رسائل النظام.
+    // التحقق من الصلاحية تمّ أعلاه عبر getChat/getChatMember بلا أي أثر في القناة.
+
 
     return {
       ok: true as const,
