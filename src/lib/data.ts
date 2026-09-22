@@ -370,7 +370,7 @@ export function useUpdateProfile() {
 export type SocialPost = Tables<"social_posts">;
 export type PipedreamAccount = Tables<"pipedream_accounts">;
 
-/** المنصات المربوطة فعلياً عبر Pipedream — مصدر الحقيقة لأزرار النشر. */
+/** حسابات النشر المتصلة؛ تيليجرام لا يُعد متصلاً إلا من الربط المباشر. */
 export function useConnectedAccounts(workspaceId?: string) {
   return useQuery({
     queryKey: ["pipedream-accounts", workspaceId],
@@ -396,12 +396,11 @@ export function useConnectedAccounts(workspaceId?: string) {
             .eq("status", "connected"),
         ),
       ]);
-      if (!telegram.length || accounts.some((account) => account.provider === "telegram")) {
-        return accounts;
-      }
+      const nonTelegramAccounts = accounts.filter((account) => account.provider !== "telegram");
+      if (!telegram.length) return nonTelegramAccounts;
       const now = new Date().toISOString();
       return [
-        ...accounts,
+        ...nonTelegramAccounts,
         {
           id: `direct-telegram-${workspaceId}`,
           workspace_id: workspaceId,
