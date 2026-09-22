@@ -81,6 +81,7 @@ export const saveAutomation = createServerFn({ method: "POST" })
         cadence: z.enum(cadences),
         dayOfWeek: z.number().int().min(0).max(6),
         hour: z.number().int().min(0).max(23),
+        timezone: z.string().min(2).max(64).default("Africa/Cairo"),
         autoPublish: z.boolean().default(false),
         active: z.boolean().default(true),
       })
@@ -96,9 +97,16 @@ export const saveAutomation = createServerFn({ method: "POST" })
       cadence: data.cadence,
       day_of_week: data.dayOfWeek,
       hour: data.hour,
+      timezone: data.timezone,
       auto_publish: data.autoPublish,
       active: data.active,
-      next_run_at: nextRun(data.cadence, data.dayOfWeek, data.hour).toISOString(),
+      next_run_at: nextRun(
+        data.cadence,
+        data.dayOfWeek,
+        data.hour,
+        new Date(),
+        data.timezone,
+      ).toISOString(),
     };
 
     if (data.id) {
