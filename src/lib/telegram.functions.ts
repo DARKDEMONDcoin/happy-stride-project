@@ -168,7 +168,8 @@ export const disconnectTelegram = createServerFn({ method: "POST" })
     const admin = await assertOwner(context.supabase, data.workspaceId);
     const { loadTelegramConfig, tg } = await import("./telegram.server");
     const config = await loadTelegramConfig(admin, data.workspaceId);
-    if (config) {
+    // بوت سهل المشترك يخدم عملاء آخرين — لا نوقف ويبهوكه عند فكّ ربط مساحة عمل واحدة.
+    if (config && !config.shared) {
       try {
         await tg(config.botToken, "deleteWebhook", { drop_pending_updates: true });
       } catch (error) {
@@ -180,6 +181,11 @@ export const disconnectTelegram = createServerFn({ method: "POST" })
       .delete()
       .eq("workspace_id", data.workspaceId)
       .eq("provider", "telegram");
+    await admin
+      .from("command_links")
+      .delete()
+      .eq("workspace_id", data.workspaceId)
+      .eq("channel", "telegram");
     await admin
       .from("integrations")
       .update({ status: "disconnected", account: null })
