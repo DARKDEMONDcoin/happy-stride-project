@@ -66,13 +66,34 @@ export async function publishQueuedPost(admin: Admin, id: string): Promise<Queue
   const attempts = (post.attempts ?? 0) + 1;
   const videoUrl = videoOf(post.meta);
   const media = mediaOf(post.meta);
+  const text = extractPostText(post.body) || post.body;
+
+  // حارس الامتثال: فشل نهائي بلا إعادة محاولة — إعادة نشر نفس النص لن تغيّر شيئاً.
+  const blockers = publishBlockers(text);
+  if (blockers.length) {
+    const message = `أُوقف النشر للمراجعة: ${blockers.join(" · ")}`;
+    await admin
+      .from("social_posts")
+      .update({ status: "failed", attempts, locked_at: null, last_error: message.slice(0, 500) })
+      .eq("id", post.id);
+    return { id: post.id, provider: post.provider, status: "failed", error: message };
+  }
+
+  // حدود الاختصاص تُفرض هنا أيضاً لا في التعليمات فقط: النشر على منصات التواصل لسِراج.
+  if (post.employee_id && post.employee_id !== OWNER_OF_SOCIAL) {
+    console.warn(
+      `[social-queue] post ${post.id} owned by ${post.employee_id} on ${post.provider} — reassigned to ${OWNER_OF_SOCIAL}`,
+    );
+    await admin.from("social_posts").update({ employee_id: OWNER_OF_SOCIAL }).eq("id", post.id);
+    post.employee_id = OWNER_OF_SOCIAL;
+  }
 
   try {
     const { publishToPlatform } = await import("./pipedream-publish.server");
     const published = await publishToPlatform(admin, {
       workspaceId: post.workspace_id,
       provider: post.provider,
-      text: extractPostText(post.body) || post.body,
+      text,
       ...(post.image_url ? { imageUrl: post.image_url } : {}),
       ...(videoUrl ? { videoUrl } : {}),
       ...(media.length ? { media } : {}),
