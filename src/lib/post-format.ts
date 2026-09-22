@@ -178,6 +178,8 @@ const AFTER_POST =
 /**
  * يستخرج نص المنشور وحده من رد الموظف: يبدأ بعد عنوان «نص المنشور» إن وُجد،
  * ويتوقف عند فاصل الماركداون أو أول سطر تعليق موجّه للمستخدم.
+ * وإن كان ما بعد العنوان مجرد تمهيد قصير («النص جاهز أدناه…») بينما المنشور
+ * الحقيقي في قسم لاحق، نختار أطول قسم فعلي بدل التمهيد.
  */
 export function extractPostText(input: string | null | undefined): string {
   if (!input) return "";
@@ -191,9 +193,23 @@ export function extractPostText(input: string | null | undefined): string {
     if (AFTER_POST.test(line)) break;
     kept.push(line);
   }
-  const body = sanitizePostBody(kept.join("\n"));
-  return body || sanitizePostBody(input);
+  const labelled = sanitizePostBody(kept.join("\n"));
+
+  // أقسام العناوين: نُقيّم كل قسم على حدة ونأخذ أطول نص صالح للنشر.
+  const sections: string[][] = [[]];
+  for (const line of lines) {
+    if (/^\s*#{1,6}\s+\S/.test(line)) sections.push([]);
+    else sections[sections.length - 1]!.push(line);
+  }
+  let best = labelled;
+  for (const section of sections) {
+    const text = sanitizePostBody(section.join("\n"));
+    if (text.length > best.length) best = text;
+  }
+
+  return best || labelled || sanitizePostBody(input);
 }
+
 
 /** هل طلب المستخدم فعلاً مخرجاً قابلاً للنشر (منشور/ريلز/مقال…)؟ */
 export function askedForPublishableOutput(request: string | null | undefined): boolean {
