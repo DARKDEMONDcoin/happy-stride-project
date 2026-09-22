@@ -377,14 +377,48 @@ export function useConnectedAccounts(workspaceId?: string) {
     enabled: !!workspaceId,
     // OAuth happens outside the app; always refresh when the user returns to the publishing screen.
     refetchOnMount: "always",
-    queryFn: () =>
-      must<PipedreamAccount[]>(
-        supabase
-          .from("pipedream_accounts")
-          .select("*")
-          .eq("workspace_id", workspaceId!)
-          .eq("status", "connected"),
-      ),
+    queryFn: async () => {
+      if (!workspaceId) return [];
+      const [accounts, telegram] = await Promise.all([
+        must<PipedreamAccount[]>(
+          supabase
+            .from("pipedream_accounts")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("status", "connected"),
+        ),
+        must<Integration[]>(
+          supabase
+            .from("integrations")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("provider", "telegram")
+            .eq("status", "connected"),
+        ),
+      ]);
+      if (!telegram.length || accounts.some((account) => account.provider === "telegram")) {
+        return accounts;
+      }
+      const now = new Date().toISOString();
+      return [
+        ...accounts,
+        {
+          id: `direct-telegram-${workspaceId}`,
+          workspace_id: workspaceId,
+          provider: "telegram",
+          app_slug: "telegram_bot_api",
+          account_id: `direct:${workspaceId}`,
+          account_name: telegram[0]?.account ?? "Telegram",
+          status: "connected",
+          healthy: true,
+          last_error: null,
+          page_id: null,
+          instagram_business_id: null,
+          connected_at: now,
+          updated_at: now,
+        },
+      ];
+    },
   });
 }
 

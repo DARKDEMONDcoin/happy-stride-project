@@ -58,7 +58,12 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
     queryKey: ["telegram-channel", workspaceId],
     queryFn: () => status({ data: { workspaceId } }),
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["telegram-channel", workspaceId] });
+  const invalidate = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["telegram-channel", workspaceId] }),
+      qc.invalidateQueries({ queryKey: ["pipedream-accounts", workspaceId] }),
+      qc.invalidateQueries({ queryKey: ["integrations", workspaceId] }),
+    ]);
 
   const connectMutation = useMutation({
     mutationFn: (input: { botToken: string; chatId: string; sendTest: boolean }) =>
@@ -78,7 +83,7 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
     mutationFn: () => test({ data: { workspaceId } }),
     onSuccess: (r) => {
       setError(null);
-      setNotice(`الربط سليم · ${r.chatTitle}`);
+      setNotice(`الربط سليم · ${r.chatTitle} · وصلت رسالة الاختبار.`);
     },
     onError: (e: Error) => {
       setNotice(null);
