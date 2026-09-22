@@ -201,6 +201,16 @@ async function publishToPlatformInner(
   const firstImage = allMedia.find((m) => m.kind === "image")?.url;
   const firstVideo = allMedia.find((m) => m.kind === "video")?.url;
 
+  // تيليجرام: نشر مباشر ببوت العميل نفسه (بلا وسيط).
+  if (params.provider === "telegram") {
+    const { telegramPublish } = await import("./telegram.server");
+    const result = await telegramPublish(admin, params.workspaceId, {
+      text: params.text,
+      imageUrl: firstImage,
+    });
+    return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
+  }
+
   // المسار الهجين: إن كان ميتا مربوطاً مباشرةً بتطبيقنا الخاص (توكن صفحة محفوظ)،
   // ننشر عبر Graph API مباشرة — أدق وأسرع ولا يقيّده تطبيق الوسيط المشترك.
   if (metaProxy) {
