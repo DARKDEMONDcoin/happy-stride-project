@@ -208,8 +208,13 @@ export const discoverTelegramChats = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const admin = await assertOwner(context.supabase, data.workspaceId);
     const { discoverChats, loadTelegramConfig } = await import("./telegram.server");
-    const token = data.botToken || (await loadTelegramConfig(admin, data.workspaceId))?.botToken;
-    if (!token) throw new Error("اكتب توكن البوت أولاً.");
+    const saved = await loadTelegramConfig(admin, data.workspaceId);
+    const token = data.botToken || (saved?.shared ? "" : (saved?.botToken ?? ""));
+    if (!token) {
+      throw new Error(
+        "مع بوت سهل الجاهز اكتب معرّف القناة مباشرة (مثل ‎@mychannel) بعد إضافة البوت مشرفاً فيها.",
+      );
+    }
     const chats = await discoverChats(token);
     return { chats };
   });
