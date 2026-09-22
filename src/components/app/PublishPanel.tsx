@@ -531,11 +531,11 @@ export function PublishPanel({
           failed.push(`${appLabel(provider)}: يحتاج صورة أو فيديو`);
           continue;
         }
-        if (videoUrl && provider !== "facebook" && provider !== "instagram") {
-          failed.push(`${appLabel(provider)}: نشر الفيديو متاح على فيسبوك وإنستجرام فقط`);
+        if (videoUrl && provider !== "facebook" && provider !== "instagram" && provider !== "telegram") {
+          failed.push(`${appLabel(provider)}: نشر الفيديو غير متاح على هذه المنصة`);
           continue;
         }
-        const multi = provider === "facebook" || provider === "instagram";
+        const multi = provider === "facebook" || provider === "instagram" || provider === "telegram";
         const base = {
           workspaceId,
           employeeId,
@@ -741,8 +741,9 @@ export function PublishPanel({
       </div>
 
       {/* المنصات: كل منصات النشر المدعومة كخيارات — والمطلوب صراحةً مُبرَز */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-muted-foreground">انشر على</span>
+      <div>
+        <span className="mb-2 block text-xs font-bold text-muted-foreground">انشر على</span>
+        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
         {(PUBLISHABLE as readonly string[]).map((p) =>
           connected.includes(p as never) ? (
             <button
@@ -750,7 +751,7 @@ export function PublishPanel({
               type="button"
               onClick={() => toggle(p)}
               aria-pressed={active.includes(p)}
-              className={chipClass(active.includes(p))}
+              className={`${chipClass(active.includes(p))} min-w-0 justify-center px-2 sm:px-3`}
             >
               <AppIcon name={p} className="size-3.5" />
               {appLabel(p)}
@@ -767,7 +768,7 @@ export function PublishPanel({
               provider={p}
               size="sm"
               label={`${providerLabel(p)} · اربطه`}
-              className={`inline-flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5 text-xs font-bold hover:bg-secondary ${
+                className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full border border-dashed px-2 py-1.5 text-xs font-bold hover:bg-secondary sm:px-3 ${
                 requested.includes(p as never)
                   ? "border-amber/60 bg-amber/10 text-ink-soft"
                   : "border-border text-muted-foreground"
@@ -775,6 +776,7 @@ export function PublishPanel({
             />
           ),
         )}
+        </div>
       </div>
       {missing.length && !active.length ? (
         <p className="mt-2 text-xs font-bold text-coral">
@@ -822,6 +824,7 @@ export function PublishPanel({
           bannedWords={workspace?.banned_words ?? []}
           tone={workspace?.tone ?? undefined}
           industry={workspace?.industry ?? undefined}
+          edited={text.trim() !== cleanBody(body).trim()}
           onApply={(next) => setText(next)}
         />
       </div>

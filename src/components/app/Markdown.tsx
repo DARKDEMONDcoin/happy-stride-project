@@ -1,3 +1,4 @@
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -12,7 +13,7 @@ const schema = {
 };
 
 /** عرض مخرجات الموظفين بتنسيق Markdown كامل (جداول، قوائم، عناوين، أكواد) بشكل احترافي وRTL. */
-export function Markdown({
+function MarkdownView({
   body,
   className,
   onOpenApp,
@@ -110,3 +111,6 @@ export function Markdown({
     </div>
   );
 }
+
+/** الرسائل القديمة لا يعاد تحليل Markdown الخاص بها مع كل جزء يصل من البث. */
+export const Markdown = memo(MarkdownView);

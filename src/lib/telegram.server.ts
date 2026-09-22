@@ -252,7 +252,14 @@ export async function telegramPublish(
 
   // حدود تيليجرام: 4096 حرفاً للرسالة، 1024 لتعليق الوسائط، و10 عناصر لكل ألبوم.
   const album = items.slice(0, 10);
-  const caption = text && text.length <= 1024 ? text : "";
+  // تيليجرام يفرض 1024 حرفاً فقط على تعليق الوسائط. لا نفصل النص عن الصورة
+  // ولا نقصه بصمت: نوقف النشر برسالة واضحة ليظل المنشور وحدة واحدة كما اختاره المالك.
+  if (album.length && text.length > 1024) {
+    throw new Error(
+      `نص تيليجرام مع الصور ${text.length} حرفاً والحد 1024 — اختصره ليُنشر النص والصور معاً في منشور واحد.`,
+    );
+  }
+  const caption = text;
 
   if (album.length > 1) {
     const sent = await tg<{ message_id: number }[]>(config.botToken, "sendMediaGroup", {
@@ -264,9 +271,6 @@ export async function telegramPublish(
       })),
     });
     const messageId = sent?.[0]?.message_id ?? 0;
-    if (text && !caption) {
-      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
-    }
     return { chatId: config.chatId, messageId };
   }
 
@@ -281,9 +285,6 @@ export async function telegramPublish(
         ...(caption ? { caption } : {}),
       },
     );
-    if (text && !caption) {
-      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
-    }
     return { chatId: config.chatId, messageId: sent.message_id };
   }
 

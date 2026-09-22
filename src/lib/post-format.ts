@@ -21,6 +21,11 @@ const CUT_FROM = [
   /^\s*#{0,6}\s*\**\s*(?:الصورة\s*\/?\s*(?:و\s*)?الفيديو|الوسائط(?:\s+المقترحة)?|المقترح\s+البصري|وصف\s+الصورة)\s*\**\s*[:：]?\s*$/u,
   /^\s*#{0,6}\s*\**\s*(?:التوقيت\s+والقياس|القياس\s+والتوقيت|التوقيت\s+المقترح|المؤشرات?|القياس)\s*\**\s*[:：]?\s*$/u,
   /^\s*#{0,6}\s*\**\s*(?:المصادر?|مصادر)\s*\**\s*[:：]?\s*$/u,
+  // تذييلات استراتيجية قد يضيفها الموظف بعد النص («منشور مخصص…»، «مؤشر القياس…»).
+  // هي ملاحظات للمالك وليست جزءاً مما يراه جمهوره.
+  /^\s*(?:منشور|محتوى|نسخة)\s+مخصّ?ص(?:ة)?\s+(?:لمنصة|لـ)\s*[^:：\n]{1,40}[:：]/u,
+  /^\s*(?:مؤشر|مؤشرات)\s+القياس\s*[:：]/u,
+  /^\s*(?:هدف|أهداف)\s+(?:المنشور|المحتوى|النشر)\s*[:：]/u,
 ];
 
 const DROP_LINE = [
@@ -195,6 +200,9 @@ export function extractPostText(input: string | null | undefined): string {
   }
   const labelled = sanitizePostBody(kept.join("\n"));
 
+  // وجود عنوان صريح «نص المنشور» عقدٌ بنيوي: لا نستبدله لاحقاً بقسم شرح أطول.
+  if (labelAt >= 0 && labelled) return labelled;
+
   // أقسام العناوين: نُقيّم كل قسم على حدة ونأخذ أطول نص صالح للنشر.
   const sections: string[][] = [[]];
   for (const line of lines) {
@@ -258,6 +266,7 @@ const LIMIT: Record<string, number> = {
   linkedin: platformHardLimit("linkedin"),
   pinterest: platformHardLimit("pinterest"),
   youtube: platformHardLimit("youtube"),
+  telegram: platformHardLimit("telegram"),
 };
 
 /** يعيد نص المنشور مكيّفاً لحدود المنصة المطلوبة. */

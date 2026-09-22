@@ -1,7 +1,11 @@
 /** بطاقة النشر الموحدة داخل المحادثة لكل الموظفين. */
-import { PublishPanel } from "@/components/app/PublishPanel";
+import { memo, useState } from "react";
+import { Send } from "lucide-react";
 
-export function PostCards({
+import { PublishPanel } from "@/components/app/PublishPanel";
+import { Button } from "@/components/ui/button";
+
+function PostCardsView({
   workspaceId,
   employeeId,
   taskId,
@@ -16,6 +20,20 @@ export function PostCards({
   body: string;
   channel?: string | undefined;
 }) {
+  const [opened, setOpened] = useState(false);
+  if (!opened) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mt-3 rounded-full text-xs font-bold"
+        onClick={() => setOpened(true)}
+      >
+        <Send className="size-3.5" /> انشر هذا المنشور
+      </Button>
+    );
+  }
   return (
     <PublishPanel
       workspaceId={workspaceId}
@@ -28,3 +46,6 @@ export function PostCards({
     />
   );
 }
+
+/** لوحات النشر القديمة لا يعاد تركيبها أثناء كتابة الرد الحالي. */
+export const PostCards = memo(PostCardsView);
