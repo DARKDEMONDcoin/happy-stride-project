@@ -96,8 +96,7 @@ export function nextRun(timing: Timing, from: Date = new Date()): Date {
     const base = new Date(from.getTime() + add * 86_400_000);
     const { y, m, d } = localParts(timezone, base);
     for (const mins of minutes) {
-      const guess = Date.UTC(y, m, d, Math.floor(mins / 60), mins % 60);
-      const candidate = new Date(guess - offsetMinutes(timezone, new Date(guess)) * 60000);
+      const candidate = zonedTimeToUtc(timezone, y, m, d, Math.floor(mins / 60), mins % 60);
       if (candidate <= from) continue;
       if (!days.includes(localParts(timezone, candidate).dow)) continue;
       return candidate;
