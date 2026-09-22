@@ -339,8 +339,14 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
               className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3 text-sm"
             >
               <span className="min-w-0 truncate">
+                <span className="me-2 rounded-full bg-jade/12 px-2 py-0.5 text-[11px] font-black text-jade-deep">
+                  مربوط
+                </span>
                 <span dir="ltr">{l.external_id}</span>
                 {l.label ? ` · ${l.label}` : ""}
+                {l.last_seen_at
+                  ? ` · آخر نشاط ${new Date(l.last_seen_at).toLocaleDateString("ar-EG")}`
+                  : ""}
               </span>
               <button
                 type="button"
