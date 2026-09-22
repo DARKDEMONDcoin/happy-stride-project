@@ -59,6 +59,9 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
     queryKey: ["telegram-channel", workspaceId],
     queryFn: () => status({ data: { workspaceId } }),
   });
+  // الوضع الافتراضي: بوت سهل الجاهز متى كان متاحاً، إلا إن اختار المستخدم غير ذلك.
+  const activeMode: "shared" | "own" =
+    mode ?? (data?.usesSharedBot || (!data?.connected && data?.sharedBotAvailable) ? "shared" : "own");
   const invalidate = () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: ["telegram-channel", workspaceId] }),
