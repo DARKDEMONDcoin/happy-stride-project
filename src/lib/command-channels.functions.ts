@@ -223,6 +223,7 @@ export const createLinkCode = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid(),
         label: z.string().max(60).nullish(),
         role: z.enum(["owner", "member"]).default("owner"),
+        channel: z.enum(["whatsapp", "telegram"]).default("whatsapp"),
       })
       .parse(input),
   )
@@ -238,7 +239,7 @@ export const createLinkCode = createServerFn({ method: "POST" })
     const { error } = await admin.from("command_link_codes").insert({
       code,
       workspace_id: data.workspaceId,
-      channel: "whatsapp",
+      channel: data.channel,
       role: data.role,
       label: data.label ?? null,
       expires_at: expiresAt,
