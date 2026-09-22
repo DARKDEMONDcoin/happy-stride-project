@@ -127,8 +127,8 @@ async function callModel(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://friendly-framework-fusion.lovable.app",
-      "X-Title": "Nour AI Employee",
+      "HTTP-Referer": "https://happy-stride-project.lovable.app",
+      "X-Title": "Sahl AI Team",
     },
     body: JSON.stringify({
       model,

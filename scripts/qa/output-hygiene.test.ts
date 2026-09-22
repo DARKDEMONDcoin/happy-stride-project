@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { extractImagePrompt, stripImagePrompt } from "../../src/lib/image-gen.server";
 import { scorePost } from "../../src/lib/post-quality";
 import { extractPostText, sanitizePostBody } from "../../src/lib/post-format";
+import { publishBlockers } from "../../src/lib/publish-guard";
 
 const output =
   "# عنوان المنشور\n\nنص عربي جاهز للنشر يحمل وعداً واضحاً.\n\n**وصف الصورة:** A cinematic photo of an Arabic coffee shop, warm light, shallow depth of field.\n\nخاتمة عربية.";
@@ -42,4 +43,55 @@ test("Telegram uses its real message limit", () => {
 test("Telegram applies the smaller caption limit when media is attached", () => {
   const report = scorePost({ text: "ن".repeat(1025), provider: "telegram", hasMedia: true });
   expect(report.blockers.some((check) => check.id === "limit")).toBe(true);
+});
+
+test("owner-directed subject and KPI lines never reach the published post", () => {
+  const dirty = [
+    "الموضوع: وجبات السمك يوم الجمعة",
+    "",
+    "خصم ٢٠٪ على وجبات السمك الجمعة.",
+    "",
+    "مؤشر الأداء للقياس بعد 48 ساعة: عدد الرسائل التي تتضمن كلمة «سمك».",
+  ].join("\n");
+  const clean = sanitizePostBody(dirty);
+  expect(clean).toBe("خصم ٢٠٪ على وجبات السمك الجمعة.");
+  expect(clean).not.toContain("الموضوع");
+  expect(clean).not.toContain("مؤشر الأداء");
+});
+
+test("extractPostText drops the trailing KPI note", () => {
+  const reply = "اطلب طبق السمك الطازج اليوم.\n\nمؤشر الأداء: عدد الرسائل.";
+  expect(extractPostText(reply)).toBe("اطلب طبق السمك الطازج اليوم.");
+});
+
+test("owner notes inside a post body are a hard publish blocker", () => {
+  const report = scorePost({
+    text: "الموضوع: عرض الجمعة\n\nخصم ٢٠٪ على كل الطلبات اليوم.",
+    provider: "facebook",
+    hasMedia: false,
+  });
+  expect(report.blockers.some((check) => check.id === "owner-notes")).toBe(true);
+});
+
+test("publish guard blocks guaranteed-result and medical claims", () => {
+  expect(publishBlockers("نضمن لك نتيجة مضمونة خلال أسبوع.").length).toBeGreaterThan(0);
+  expect(publishBlockers("هذا المنتج يشفي من الصداع نهائياً.").length).toBeGreaterThan(0);
+  expect(publishBlockers("أرباح مضمونة من أول شهر.").length).toBeGreaterThan(0);
+  expect(publishBlockers("جرّب طبق السمك الطازج عندنا اليوم في جدة.")).toEqual([]);
+});
+
+test("hashtags survive when an owner note sits above them", () => {
+  const dirty = "خصم ٢٠٪ على وجبات السمك.\n\nمؤشر القياس بعد ٤٨ ساعة: عدد الرسائل.\n\n#سمك #عرض";
+  const clean = sanitizePostBody(dirty);
+  expect(clean).toContain("#سمك");
+  expect(clean).not.toContain("مؤشر القياس");
+});
+
+test("a standalone label line above the post is removed", () => {
+  expect(sanitizePostBody("إعلان\n\nخصم ٢٠٪ اليوم فقط.")).toBe("خصم ٢٠٪ اليوم فقط.");
+});
+
+test("an inline measurement parenthesis is stripped from the post", () => {
+  const dirty = "أرسل كلمة «قهوة» في رسالة (يُقاس التفاعل بعد ٤٨ ساعة بعدد الرسائل).";
+  expect(sanitizePostBody(dirty)).toBe("أرسل كلمة «قهوة» في رسالة.");
 });
