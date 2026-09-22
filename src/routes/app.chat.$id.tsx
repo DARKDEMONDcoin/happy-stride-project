@@ -988,6 +988,17 @@ function ChatView({
     if (chunk && !cancelledRef.current) setLiveText((previous) => previous + chunk);
   };
 
+  useEffect(
+    () => () => {
+      if (streamFrameRef.current !== null) {
+        window.cancelAnimationFrame(streamFrameRef.current);
+        streamFrameRef.current = null;
+      }
+      streamBufferRef.current = "";
+    },
+    [],
+  );
+
   // المستخدم حرّ في التقليب أثناء كتابة الموظف: لا ننزل معه إلا إذا كان أصلاً عند الأسفل.
   useEffect(() => {
     if (!stickToBottom) return;
