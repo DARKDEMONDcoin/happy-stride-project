@@ -162,7 +162,6 @@ export function PublishPanel({
     } catch {
       /* تجاهل أي تخزين تالف */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaKey]);
   useEffect(() => {
     if (typeof window === "undefined") return;
