@@ -1189,12 +1189,8 @@ export async function runEmployeeTurn(
             const draft =
               (fromField ? fromField.trim() : null) ??
               extractImagePrompt(`${reply}\n${deliverables.map((d) => d.body ?? "").join("\n")}`);
-            const wantsVisual =
-              imageMode === "manual" ||
-              // طلب صريح للصورة: نولّدها دائماً حتى لو لم يُرجع النموذج وصفاً بصرياً.
-              explicitImage ||
-              Boolean(draft) ||
-              deliverables.some((d) => d.body && d.body.length > 80);
+            // لا تُولَّد صورة إلا بطلب صريح أو وصف كتبه المستخدم بنفسه.
+            const wantsVisual = imageMode === "manual" || explicitImage;
             if (wantsVisual) {
               emit({
                 type: "step",
