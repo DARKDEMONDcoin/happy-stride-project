@@ -213,6 +213,8 @@ async function publishToPlatformInner(
     const result = await telegramPublish(admin, params.workspaceId, {
       text: params.text,
       ...(firstImage ? { imageUrl: firstImage } : {}),
+      ...(firstVideo ? { videoUrl: firstVideo } : {}),
+      ...(allMedia.length ? { media: allMedia } : {}),
     });
     return { provider: "telegram", accountId: `telegram:${result.chatId}`, result };
   }
