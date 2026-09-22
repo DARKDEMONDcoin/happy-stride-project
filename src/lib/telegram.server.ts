@@ -220,30 +220,73 @@ export async function registerWebhook(workspaceId: string, botToken: string, sha
 export async function telegramPublish(
   admin: Admin,
   workspaceId: string,
-  input: { text: string; imageUrl?: string },
+  input: {
+    text: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    media?: { url: string; kind: "image" | "video" }[];
+  },
 ): Promise<{ chatId: string; messageId: number }> {
   const config = await loadTelegramConfig(admin, workspaceId);
   if (!config) throw new Error("تيليجرام غير مربوط بعد — اربطه من الإعدادات ← تيليجرام.");
 
   const text = input.text.trim();
-  if (!text && !input.imageUrl) throw new Error("لا يوجد نص للنشر.");
 
-  // حدود تيليجرام: 4096 حرفاً للرسالة، 1024 لتعليق الصورة.
-  if (input.imageUrl && text.length <= 1024) {
-    const sent = await tg<{ message_id: number }>(config.botToken, "sendPhoto", {
-      chat_id: config.chatId,
-      photo: input.imageUrl,
-      caption: text || undefined,
-    });
-    return { chatId: config.chatId, messageId: sent.message_id };
+  // كل ما اختاره المالك من صور وفيديوهات يُنشر مع نفس المنشور، لا في رسالة منفصلة.
+  const seen = new Set<string>();
+  const items: { url: string; kind: "image" | "video" }[] = [];
+  for (const item of [
+    ...(input.imageUrl ? [{ url: input.imageUrl, kind: "image" as const }] : []),
+    ...(input.videoUrl ? [{ url: input.videoUrl, kind: "video" as const }] : []),
+    ...(input.media ?? []),
+  ]) {
+    if (!item?.url || seen.has(item.url)) continue;
+    seen.add(item.url);
+    items.push({ url: item.url, kind: item.kind === "video" ? "video" : "image" });
   }
 
-  if (input.imageUrl) {
-    await tg(config.botToken, "sendPhoto", { chat_id: config.chatId, photo: input.imageUrl });
-  }
+  if (!text && !items.length) throw new Error("لا يوجد نص للنشر.");
   if (text.length > 4096) {
     throw new Error(`نص تيليجرام ${text.length} حرفاً والحد 4096 — اختصره ثم أعد النشر.`);
   }
+
+  // حدود تيليجرام: 4096 حرفاً للرسالة، 1024 لتعليق الوسائط، و10 عناصر لكل ألبوم.
+  const album = items.slice(0, 10);
+  const caption = text && text.length <= 1024 ? text : "";
+
+  if (album.length > 1) {
+    const sent = await tg<{ message_id: number }[]>(config.botToken, "sendMediaGroup", {
+      chat_id: config.chatId,
+      media: album.map((m, i) => ({
+        type: m.kind === "video" ? "video" : "photo",
+        media: m.url,
+        ...(i === 0 && caption ? { caption } : {}),
+      })),
+    });
+    const messageId = sent?.[0]?.message_id ?? 0;
+    if (text && !caption) {
+      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
+    }
+    return { chatId: config.chatId, messageId };
+  }
+
+  const single = album[0];
+  if (single) {
+    const sent = await tg<{ message_id: number }>(
+      config.botToken,
+      single.kind === "video" ? "sendVideo" : "sendPhoto",
+      {
+        chat_id: config.chatId,
+        ...(single.kind === "video" ? { video: single.url } : { photo: single.url }),
+        ...(caption ? { caption } : {}),
+      },
+    );
+    if (text && !caption) {
+      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
+    }
+    return { chatId: config.chatId, messageId: sent.message_id };
+  }
+
   const sent = await tg<{ message_id: number }>(config.botToken, "sendMessage", {
     chat_id: config.chatId,
     text,
@@ -251,6 +294,7 @@ export async function telegramPublish(
   });
   return { chatId: config.chatId, messageId: sent.message_id };
 }
+
 
 /** رسالة خاصة لأي دردشة (الردود على أوامر صاحب العمل والإشعارات). */
 export async function telegramReply(botToken: string, chatId: string | number, text: string) {
