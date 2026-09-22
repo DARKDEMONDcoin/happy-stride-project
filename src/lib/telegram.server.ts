@@ -252,7 +252,14 @@ export async function telegramPublish(
 
   // حدود تيليجرام: 4096 حرفاً للرسالة، 1024 لتعليق الوسائط، و10 عناصر لكل ألبوم.
   const album = items.slice(0, 10);
-  const caption = text && text.length <= 1024 ? text : "";
+  // تيليجرام يفرض 1024 حرفاً فقط على تعليق الوسائط. لا نفصل النص عن الصورة
+  // ولا نقصه بصمت: نوقف النشر برسالة واضحة ليظل المنشور وحدة واحدة كما اختاره المالك.
+  if (album.length && text.length > 1024) {
+    throw new Error(
+      `نص تيليجرام مع الصور ${text.length} حرفاً والحد 1024 — اختصره ليُنشر النص والصور معاً في منشور واحد.`,
+    );
+  }
+  const caption = text;
 
   if (album.length > 1) {
     const sent = await tg<{ message_id: number }[]>(config.botToken, "sendMediaGroup", {
@@ -264,9 +271,6 @@ export async function telegramPublish(
       })),
     });
     const messageId = sent?.[0]?.message_id ?? 0;
-    if (text && !caption) {
-      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
-    }
     return { chatId: config.chatId, messageId };
   }
 
@@ -281,9 +285,6 @@ export async function telegramPublish(
         ...(caption ? { caption } : {}),
       },
     );
-    if (text && !caption) {
-      await tg(config.botToken, "sendMessage", { chat_id: config.chatId, text });
-    }
     return { chatId: config.chatId, messageId: sent.message_id };
   }
 
@@ -294,7 +295,6 @@ export async function telegramPublish(
   });
   return { chatId: config.chatId, messageId: sent.message_id };
 }
-
 
 /** رسالة خاصة لأي دردشة (الردود على أوامر صاحب العمل والإشعارات). */
 export async function telegramReply(botToken: string, chatId: string | number, text: string) {
@@ -311,11 +311,13 @@ export async function discoverChats(
 ): Promise<{ id: string; title: string; type: string }[]> {
   await tg(botToken, "deleteWebhook", { drop_pending_updates: false }).catch(() => null);
   type Chat = { id: number; title?: string; username?: string; first_name?: string; type?: string };
-  const updates = await tg<{ message?: { chat?: Chat }; channel_post?: { chat?: Chat }; my_chat_member?: { chat?: Chat } }[]>(
-    botToken,
-    "getUpdates",
-    { limit: 100, timeout: 0 },
-  );
+  const updates = await tg<
+    {
+      message?: { chat?: Chat };
+      channel_post?: { chat?: Chat };
+      my_chat_member?: { chat?: Chat };
+    }[]
+  >(botToken, "getUpdates", { limit: 100, timeout: 0 });
   const seen = new Map<string, { id: string; title: string; type: string }>();
   for (const update of updates) {
     const chat = update.channel_post?.chat ?? update.message?.chat ?? update.my_chat_member?.chat;

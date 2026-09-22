@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -116,7 +116,12 @@ function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   /** المؤقّت يُلغى عند الخروج: بدونه يُحدَّث زر مختفٍ بعد تبديل المحادثة. */
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   return (
     <button
       type="button"
@@ -154,7 +159,12 @@ function MessageActions({
   const [shared, setShared] = useState(false);
   /** المؤقّت يُلغى عند الخروج: بدونه يُحدَّث زر مختفٍ بعد تبديل المحادثة. */
   const shareTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (shareTimer.current) clearTimeout(shareTimer.current); }, []);
+  useEffect(
+    () => () => {
+      if (shareTimer.current) clearTimeout(shareTimer.current);
+    },
+    [],
+  );
   const btn =
     "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.7rem] font-bold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50";
   const share = async () => {
@@ -207,15 +217,6 @@ function MessageActions({
   );
 }
 
-/** آخر رسالة كتبها المستخدم قبل رد الموظف — لنعرف ما طلبه بالضبط (المنصة مثلاً). */
-function lastUserBefore(arr: { role: string; body: string }[], idx: number): string {
-  for (let i = idx - 1; i >= 0; i -= 1) {
-    const m = arr[i];
-    if (m && m.role === "user") return m.body;
-  }
-  return "";
-}
-
 /**
  * يقرّر إن كان رد الموظف منشوراً قابلاً للنشر (لا سؤالاً ولا شرحاً قصيراً).
  * يُطبَّق على كل الموظفين بالتساوي: المنشور القصير (تغريدة/كابشن/ستوري) مقبول
@@ -231,7 +232,6 @@ function looksPostable(body: string, request?: string | null): boolean {
     return text.length >= 40;
   return text.length > 220;
 }
-
 
 export const Route = createFileRoute("/app/chat/$id")({
   validateSearch: (s: Record<string, unknown>): { prompt?: string } =>
@@ -626,12 +626,18 @@ const EMPLOYEE_COPY: Record<string, { prompts: string[]; greetings: string[] }> 
 const BAR_BRAND = new Set(["sonny", "nour", "dana"]);
 const BAR_WORK = new Set(["sonny", "eva", "sam", "nour", "adam", "dana"]);
 
-function useTypewriter(lines: string[], pause = 1700) {
+function useTypewriter(lines: string[], pause = 1700, enabled = true) {
   const [line, setLine] = useState(0);
   const [length, setLength] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (!enabled) {
+      setLine(0);
+      setLength(lines[0]?.length ?? 0);
+      setDeleting(false);
+      return;
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setLength(lines[0]?.length ?? 0);
       return;
@@ -648,7 +654,7 @@ function useTypewriter(lines: string[], pause = 1700) {
       } else setLength((value) => value + (deleting ? -1 : 1));
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [deleting, length, line, lines, pause]);
+  }, [deleting, enabled, length, line, lines, pause]);
 
   return lines[line]?.slice(0, length) ?? "";
 }
@@ -761,8 +767,10 @@ function ChatView({
   const quickSkills = featuredSkillsFor(id).slice(0, 6);
   const employeeCopy: { prompts: string[]; greetings: string[] } =
     EMPLOYEE_COPY[id] ?? EMPLOYEE_COPY["sonny"]!;
-  const rotatingPlaceholder = useTypewriter(employeeCopy.prompts);
-  const rotatingGreeting = useTypewriter(employeeCopy.greetings, 2400);
+  // أثناء وجود رسائل لا نشغّل مؤقتات كتابة مستمرة تعيد رسم صفحة المحادثة كلها.
+  const hasMessages = Boolean((messages ?? []).length || pending);
+  const rotatingPlaceholder = useTypewriter(employeeCopy.prompts, 1700, !hasMessages);
+  const rotatingGreeting = useTypewriter(employeeCopy.greetings, 2400, !hasMessages);
   const userName = profile?.full_name?.trim().split(/\s+/)[0] || "صديقي";
   /** آخر رسالة فشل إرسالها — لزر «أعد المحاولة». */
   const [pendingText, setPendingText] = useState<string | null>(null);
@@ -872,9 +880,16 @@ function ChatView({
           },
           onDelta: (text) => {
             started = true;
-            if (!cancelledRef.current) setLiveText((prev) => prev + text);
+            if (cancelledRef.current) return;
+            streamBufferRef.current += text;
+            if (streamFrameRef.current === null) {
+              streamFrameRef.current = window.requestAnimationFrame(flushStream);
+            }
           },
-          onReset: () => setLiveText(""),
+          onReset: () => {
+            streamBufferRef.current = "";
+            setLiveText("");
+          },
         });
         return { result, activeConversationId };
       } catch (streamError) {
@@ -954,11 +969,30 @@ function ChatView({
 
   const busy = send.isPending || skillRun.isPending;
 
+  const messageRequests = useMemo(() => {
+    let last = "";
+    return (messages ?? []).map((message) => {
+      const before = last;
+      if (message.role === "user") last = message.body;
+      return before;
+    });
+  }, [messages]);
+
+  // نحدّث شاشة البث مرة واحدة لكل إطار بدلاً من إعادة رسم المحادثة مع كل جزء صغير.
+  const streamBufferRef = useRef("");
+  const streamFrameRef = useRef<number | null>(null);
+  const flushStream = () => {
+    streamFrameRef.current = null;
+    const chunk = streamBufferRef.current;
+    streamBufferRef.current = "";
+    if (chunk && !cancelledRef.current) setLiveText((previous) => previous + chunk);
+  };
+
   // المستخدم حرّ في التقليب أثناء كتابة الموظف: لا ننزل معه إلا إذا كان أصلاً عند الأسفل.
   useEffect(() => {
     if (!stickToBottom) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages?.length, send.isPending, skillRun.isPending, liveText, liveStep, stickToBottom]);
+  }, [messages?.length, send.isPending, skillRun.isPending, liveStep, stickToBottom]);
 
   const onColumnScroll = () => {
     const el = columnRef.current;
@@ -1179,6 +1213,7 @@ function ChatView({
               const newDay = !prev || dayLabel(prev.created_at) !== dayLabel(m.created_at);
               const isUser = m.role === "user";
               const body = isUser ? m.body : prettyBody(m.body);
+              const priorRequest = messageRequests[idx] ?? "";
               return (
                 <div key={m.id} className="space-y-4">
                   {newDay ? (
@@ -1220,7 +1255,7 @@ function ChatView({
                         id === "nour" &&
                         workspace &&
                         m.body.length > 600 &&
-                        askedForPublishableOutput(lastUserBefore(arr, idx)) ? (
+                        askedForPublishableOutput(priorRequest) ? (
                           wpConnected ? (
                             <PublishToWordPress workspaceId={workspace.id} body={m.body} />
                           ) : (
@@ -1238,22 +1273,20 @@ function ChatView({
                         id === "sonny" &&
                         workspace &&
                         !m.body.includes("(/app/tasks)") &&
-                        askedForPublishableOutput(lastUserBefore(arr, idx)) &&
-                        looksPostable(m.body, lastUserBefore(arr, idx)) ? (
+                        askedForPublishableOutput(priorRequest) &&
+                        looksPostable(m.body, priorRequest) ? (
                           <PostCards
                             workspaceId={workspace.id}
                             employeeId={id}
                             taskId={savedTask}
-                            channel={
-                              requestedPublishTargets(lastUserBefore(arr, idx))[0] ?? "instagram"
-                            }
-                            request={lastUserBefore(arr, idx)}
+                            channel={requestedPublishTargets(priorRequest)[0] ?? "instagram"}
+                            request={priorRequest}
                             body={m.body}
                           />
                         ) : null}
 
                         {(() => {
-                          const req = isUser ? m.body : lastUserBefore(arr, idx);
+                          const req = isUser ? m.body : priorRequest;
                           const handoff = detectHandoff(req, id);
                           if (!handoff) return null;
                           // تظهر مرة واحدة: مع رسالة المستخدم مباشرة إن كانت آخر رسالة،
@@ -1261,7 +1294,11 @@ function ChatView({
                           const nextIsAssistant = arr[idx + 1] && arr[idx + 1]!.role !== "user";
                           if (isUser && nextIsAssistant) return null;
                           return (
-                            <HandoffCard handoff={handoff} request={req} currentName={member.name} />
+                            <HandoffCard
+                              handoff={handoff}
+                              request={req}
+                              currentName={member.name}
+                            />
                           );
                         })()}
 
@@ -1286,11 +1323,11 @@ function ChatView({
                                   signal(m.id, "edited", m.body);
                                 }}
                                 onRegenerate={
-                                  lastUserBefore(arr, idx)
+                                  priorRequest
                                     ? () => {
                                         signal(m.id, "rejected", m.body);
                                         void submit(
-                                          `${lastUserBefore(arr, idx)}\n\n(أعد صياغة الرد السابق بزاوية مختلفة وأقوى، وحافظ على نفس الطلب.)`,
+                                          `${priorRequest}\n\n(أعد صياغة الرد السابق بزاوية مختلفة وأقوى، وحافظ على نفس الطلب.)`,
                                         );
                                       }
                                     : null

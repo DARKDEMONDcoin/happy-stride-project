@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { extractPostText } from "./post-format";
 
 async function assertOwner(
   supabase: {
@@ -86,6 +87,12 @@ function metaOf(data: {
   };
 }
 
+function cleanPublishBody(body: string): string {
+  const clean = extractPostText(body);
+  if (!clean) throw new Error("نص المنشور فارغ بعد إزالة ملاحظات الموظف.");
+  return clean;
+}
+
 /** أقصى حجم وسائط يُرفع من الجهاز: ٥٠ ميجابايت. */
 const MAX_UPLOAD = 50 * 1024 * 1024;
 
@@ -143,7 +150,7 @@ export const scheduleSocialPost = createServerFn({ method: "POST" })
         employee_id: data.employeeId,
         task_id: data.taskId ?? null,
         provider: data.provider,
-        body: data.body,
+        body: cleanPublishBody(data.body),
         image_url: data.imageUrl ?? null,
         meta: metaOf(data),
 
@@ -170,7 +177,7 @@ export const publishSocialNow = createServerFn({ method: "POST" })
         employee_id: data.employeeId,
         task_id: data.taskId ?? null,
         provider: data.provider,
-        body: data.body,
+        body: cleanPublishBody(data.body),
         image_url: data.imageUrl ?? null,
         meta: metaOf(data),
         scheduled_at: new Date().toISOString(),

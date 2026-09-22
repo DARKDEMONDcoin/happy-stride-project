@@ -100,6 +100,14 @@ const SPEC: Record<string, Spec> = {
     needsMedia: false,
     maxLineLen: 220,
   },
+  telegram: {
+    hardLimit: 4096,
+    sweet: [80, 1024],
+    hashtags: [0, 5],
+    maxEmojis: 6,
+    needsMedia: false,
+    maxLineLen: 200,
+  },
 };
 
 const DEFAULT_SPEC: Spec = {
@@ -124,7 +132,8 @@ const CTA =
 const HOOK_QUESTION = /[؟?]/u;
 const HOOK_NUMBER = /(\d|[٠-٩]|نصف|ضعف|أول|آخر)/u;
 const HOOK_DIRECT = /(أنت|إنت|لو\s|إذا\s|تخيل|تخيّل|توقف|بلاش|لا\s+ت|كفاية|سر\s|٣|3\s+أسباب|هل\s)/u;
-const WEAK_OPENING = /^(مرحباً|مرحبا|أهلاً|اهلا|يسرنا|يسعدنا|نقدّم لكم|نقدم لكم|هل تبحث عن|في عالم اليوم|في عصر)/iu;
+const WEAK_OPENING =
+  /^(مرحباً|مرحبا|أهلاً|اهلا|يسرنا|يسعدنا|نقدّم لكم|نقدم لكم|هل تبحث عن|في عالم اليوم|في عصر)/iu;
 
 /** قيمة واضحة للقارئ: فائدة، حل مشكلة، توفير، تعلّم، أو نتيجة ملموسة. */
 const VALUE_PROMISE =
@@ -306,15 +315,16 @@ export function scorePost({
   );
 
   // ٣) حد المنصة — حاجز نشر.
-  const overLimit = chars > spec.hardLimit;
+  const effectiveLimit = provider === "telegram" && hasMedia ? 1024 : spec.hardLimit;
+  const overLimit = chars > effectiveLimit;
   add(
     "limit",
     `الطول ضمن حد ${PROVIDER_LABEL[provider] ?? provider}`,
     12,
     overLimit ? "fail" : "pass",
     overLimit
-      ? `النص ${chars} حرفاً والحد ${spec.hardLimit} — اختصره وإلا سيُقتطع.`
-      : `${chars} حرفاً من ${spec.hardLimit}.`,
+      ? `النص ${chars} حرفاً والحد ${effectiveLimit}${provider === "telegram" && hasMedia ? " مع الوسائط" : ""} — اختصره وإلا سترفضه المنصة.`
+      : `${chars} حرفاً من ${effectiveLimit}.`,
   );
 
   // ٤) الطول المثالي للتفاعل.
@@ -451,8 +461,7 @@ export function scorePost({
   );
 
   const paragraphCount = lines.length;
-  const scannable =
-    (chars >= 20 && chars < 180) || (paragraphCount >= 2 && paragraphCount <= 8);
+  const scannable = (chars >= 20 && chars < 180) || (paragraphCount >= 2 && paragraphCount <= 8);
   add(
     "scan",
     "بنية سريعة المسح",

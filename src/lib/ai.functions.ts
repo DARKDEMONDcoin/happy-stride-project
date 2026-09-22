@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { freeChat } from "@/lib/nour-research.server";
 import { actionTruthRules, sanitizeActionClaims } from "@/lib/action-claims";
-import { dedupeParagraphs, dropEchoedSection } from "@/lib/post-format";
+import { dedupeParagraphs, dropEchoedSection, extractPostText } from "@/lib/post-format";
 import {
   craft,
   evidenceRules,
@@ -432,9 +432,8 @@ export async function runEmployeeTurn(
       ) || data.message.length > 220;
 
     // نيّة الرسالة: عمل (مخرج جاهز) أم سؤال/دردشة يُجاب عليها فقط بلا فرض خدمات.
-    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } = await import(
-      "./chat-intent"
-    );
+    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } =
+      await import("./chat-intent");
     const intent = chatIntent(data.message);
     /** رفض صريح للصورة: «بدون صورة» يمنع أي توليد مهما كان الموظف أو المخرج. */
     const imageRefused = refusesImageRequest(data.message);
@@ -1137,7 +1136,6 @@ export async function runEmployeeTurn(
           // تمرير النبرة هنا كان يطلب من المصلّح الكتابة بلهجة اسمها «ودود ومحترف».
           ...(ownerDialect ? { dialect: ownerDialect } : {}),
 
-
           // وسائط حقيقية فقط: مرفقات المستخدم أو صورة ستُولَّد فعلاً.
           hasMedia: Boolean(data.attachments?.length) || (data.imageMode ?? "auto") !== "off",
         })) as typeof deliverables;
@@ -1230,7 +1228,6 @@ export async function runEmployeeTurn(
       if (postBody.length > 60) reply = postBody;
     }
 
-
     reply = fillPlaceholders(reply, workspace.name, ws.website ?? null, brandProducts);
     reply = sanitizeActionClaims(reply, connected);
     // منع التكرار: أحياناً يعيد النموذج نفس الفقرة مرتين (ملخص + مخرج) — نُبقي أول ظهور فقط.
@@ -1322,6 +1319,15 @@ export async function runEmployeeTurn(
     reply = fillPlaceholders(reply, workspace.name, ws.website ?? null, brandProducts);
     for (const d of deliverables) {
       d.body = fillPlaceholders(d.body ?? "", workspace.name, ws.website ?? null, brandProducts);
+    }
+    if (deliverables.length === 1) {
+      // حارس أخير بعد المراجعة الآلية: حتى لو أعادت المراجعة مقدمة أو تذييل قياس،
+      // يبقى الرد القابل للنشر هو متن المخرج المنظم وحده.
+      const postBody = extractPostText(deliverables[0]?.body ?? reply);
+      if (postBody) {
+        deliverables[0]!.body = postBody;
+        reply = postBody;
+      }
     }
 
     const footers = toolBlocks.map((t) => t.footer).filter(Boolean);
