@@ -20312,6 +20312,7 @@ section:has(> .integration-grid-wave) {
    =========================================================== */
 .sauth-page {
   position: relative;
+  height: 100svh;
   min-height: 100svh;
   background: #faf6ef;
   color: #24201b;
@@ -20429,12 +20430,60 @@ section:has(> .integration-grid-wave) {
   position: relative;
   z-index: 1;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 18px;
   padding: 16px 20px 44px;
+}
+
+/* تحافظ شاشة التسجيل على كل عناصرها داخل شاشات الكمبيوتر القصيرة بلا تمرير. */
+@media (min-width: 641px) and (max-height: 760px) {
+  .sauth-topbar {
+    padding: 14px 18px;
+  }
+  .sauth-center {
+    gap: 9px;
+    padding: 10px 20px;
+  }
+  .sauth-card-body {
+    padding: 18px 24px 16px;
+  }
+  .sauth-title {
+    margin-bottom: 10px;
+    font-size: 20px;
+    line-height: 1.25;
+  }
+  .sauth-google {
+    padding-block: 8px;
+  }
+  .sauth-divider {
+    margin-block: 10px;
+  }
+  .sauth-form {
+    gap: 9px;
+  }
+  .sauth-field {
+    gap: 3px;
+  }
+  .sauth-input {
+    padding-block: 8px;
+  }
+  .sauth-check {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .sauth-submit {
+    padding-block: 9px;
+  }
+  .sauth-card-foot {
+    padding-block: 9px;
+  }
+  .sauth-footer {
+    line-height: 1.2;
+  }
 }
 
 .sauth-card {

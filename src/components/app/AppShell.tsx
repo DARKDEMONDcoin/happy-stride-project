@@ -78,7 +78,6 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             >
               <span className="relative block size-10 shrink-0 overflow-hidden rounded-lg shadow-sm">
                 <Portrait memberId={m.id} name={m.name} className="size-full" />
-                <span className="absolute bottom-0 end-0 size-2.5 rounded-full border-2 border-card bg-primary" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-bold">{m.name}</span>
