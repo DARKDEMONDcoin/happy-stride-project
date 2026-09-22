@@ -55,6 +55,7 @@ const RULES: Rule[] = [...ABSOLUTE, ...MEDICAL, ...FINANCIAL, ...OWNER_NOTE];
 export function publishBlockers(text: string | null | undefined): string[] {
   if (!text || !text.trim()) return ["نص المنشور فارغ."];
   const out: string[] = [];
-  for (const rule of RULES) if (rule.re.test(text) && !out.includes(rule.reason)) out.push(rule.reason);
+  for (const rule of RULES)
+    if (rule.re.test(text) && !out.includes(rule.reason)) out.push(rule.reason);
   return out;
 }
