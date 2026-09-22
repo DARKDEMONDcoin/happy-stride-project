@@ -1003,7 +1003,14 @@ function ChatView({
   useEffect(() => {
     if (!stickToBottom) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages?.length, send.isPending, skillRun.isPending, liveStep, stickToBottom]);
+  }, [
+    messages?.length,
+    send.isPending,
+    skillRun.isPending,
+    liveStep,
+    liveText,
+    stickToBottom,
+  ]);
 
   const onColumnScroll = () => {
     const el = columnRef.current;
