@@ -113,4 +113,7 @@ function MarkdownView({
 }
 
 /** الرسائل القديمة لا يعاد تحليل Markdown الخاص بها مع كل جزء يصل من البث. */
-export const Markdown = memo(MarkdownView);
+export const Markdown = memo(
+  MarkdownView,
+  (previous, next) => previous.body === next.body && previous.className === next.className,
+);

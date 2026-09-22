@@ -43526,8 +43526,7 @@ html {
     filter 0.72s var(--ease-exit);
 }
 .chat-stage.is-engaged .chat-smoke {
-  opacity: 0;
-  filter: blur(14px);
+  display: none;
 }
 .chat-smoke span {
   position: absolute;

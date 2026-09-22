@@ -874,9 +874,16 @@ function ChatView({
           },
           onDelta: (text) => {
             started = true;
-            if (!cancelledRef.current) setLiveText((prev) => prev + text);
+            if (cancelledRef.current) return;
+            streamBufferRef.current += text;
+            if (streamFrameRef.current === null) {
+              streamFrameRef.current = window.requestAnimationFrame(flushStream);
+            }
           },
-          onReset: () => setLiveText(""),
+          onReset: () => {
+            streamBufferRef.current = "";
+            setLiveText("");
+          },
         });
         return { result, activeConversationId };
       } catch (streamError) {
@@ -955,6 +962,15 @@ function ChatView({
   });
 
   const busy = send.isPending || skillRun.isPending;
+
+  const messageRequests = useMemo(() => {
+    let last = "";
+    return (messages ?? []).map((message) => {
+      const before = last;
+      if (message.role === "user") last = message.body;
+      return before;
+    });
+  }, [messages]);
 
   // نحدّث شاشة البث مرة واحدة لكل إطار بدلاً من إعادة رسم المحادثة مع كل جزء صغير.
   const streamBufferRef = useRef("");
@@ -1191,6 +1207,7 @@ function ChatView({
               const newDay = !prev || dayLabel(prev.created_at) !== dayLabel(m.created_at);
               const isUser = m.role === "user";
               const body = isUser ? m.body : prettyBody(m.body);
+              const priorRequest = messageRequests[idx] ?? "";
               return (
                 <div key={m.id} className="space-y-4">
                   {newDay ? (
@@ -1232,7 +1249,7 @@ function ChatView({
                         id === "nour" &&
                         workspace &&
                         m.body.length > 600 &&
-                        askedForPublishableOutput(lastUserBefore(arr, idx)) ? (
+                        askedForPublishableOutput(priorRequest) ? (
                           wpConnected ? (
                             <PublishToWordPress workspaceId={workspace.id} body={m.body} />
                           ) : (
@@ -1250,22 +1267,22 @@ function ChatView({
                         id === "sonny" &&
                         workspace &&
                         !m.body.includes("(/app/tasks)") &&
-                        askedForPublishableOutput(lastUserBefore(arr, idx)) &&
-                        looksPostable(m.body, lastUserBefore(arr, idx)) ? (
+                        askedForPublishableOutput(priorRequest) &&
+                        looksPostable(m.body, priorRequest) ? (
                           <PostCards
                             workspaceId={workspace.id}
                             employeeId={id}
                             taskId={savedTask}
                             channel={
-                              requestedPublishTargets(lastUserBefore(arr, idx))[0] ?? "instagram"
+                              requestedPublishTargets(priorRequest)[0] ?? "instagram"
                             }
-                            request={lastUserBefore(arr, idx)}
+                            request={priorRequest}
                             body={m.body}
                           />
                         ) : null}
 
                         {(() => {
-                          const req = isUser ? m.body : lastUserBefore(arr, idx);
+                          const req = isUser ? m.body : priorRequest;
                           const handoff = detectHandoff(req, id);
                           if (!handoff) return null;
                           // تظهر مرة واحدة: مع رسالة المستخدم مباشرة إن كانت آخر رسالة،
@@ -1298,11 +1315,11 @@ function ChatView({
                                   signal(m.id, "edited", m.body);
                                 }}
                                 onRegenerate={
-                                  lastUserBefore(arr, idx)
+                                  priorRequest
                                     ? () => {
                                         signal(m.id, "rejected", m.body);
                                         void submit(
-                                          `${lastUserBefore(arr, idx)}\n\n(أعد صياغة الرد السابق بزاوية مختلفة وأقوى، وحافظ على نفس الطلب.)`,
+                                          `${priorRequest}\n\n(أعد صياغة الرد السابق بزاوية مختلفة وأقوى، وحافظ على نفس الطلب.)`,
                                         );
                                       }
                                     : null

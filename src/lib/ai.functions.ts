@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { freeChat } from "@/lib/nour-research.server";
 import { actionTruthRules, sanitizeActionClaims } from "@/lib/action-claims";
-import { dedupeParagraphs, dropEchoedSection } from "@/lib/post-format";
+import { dedupeParagraphs, dropEchoedSection, extractPostText } from "@/lib/post-format";
 import {
   craft,
   evidenceRules,
@@ -1322,6 +1322,15 @@ export async function runEmployeeTurn(
     reply = fillPlaceholders(reply, workspace.name, ws.website ?? null, brandProducts);
     for (const d of deliverables) {
       d.body = fillPlaceholders(d.body ?? "", workspace.name, ws.website ?? null, brandProducts);
+    }
+    if (deliverables.length === 1) {
+      // حارس أخير بعد المراجعة الآلية: حتى لو أعادت المراجعة مقدمة أو تذييل قياس،
+      // يبقى الرد القابل للنشر هو متن المخرج المنظم وحده.
+      const postBody = extractPostText(deliverables[0]?.body ?? reply);
+      if (postBody) {
+        deliverables[0]!.body = postBody;
+        reply = postBody;
+      }
     }
 
     const footers = toolBlocks.map((t) => t.footer).filter(Boolean);
