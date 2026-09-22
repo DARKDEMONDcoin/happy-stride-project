@@ -11,6 +11,7 @@ export const PUBLISHABLE = [
   "x",
   "pinterest",
   "youtube",
+  "telegram",
 ] as const;
 export type Publishable = (typeof PUBLISHABLE)[number];
 
@@ -21,6 +22,7 @@ const ALIASES: Record<string, RegExp> = {
   x: /تويتر|إكس\b|اكس\b|twitter|\bx\.com|(?:^|\s)(?:على|علي|ع)\s*x(?:\s|$|[،,.])/i,
   pinterest: /بنترست|بينترست|pinterest/i,
   youtube: /يوتيوب|يوتوب|youtube|شورتس|shorts/i,
+  telegram: /تيليجرام|تيليغرام|تليجرام|تليغرام|تلجرام|telegram|\btg\b/i,
   tiktok: /تيك\s*توك|تيكتوك|tiktok/i,
   snapchat: /سناب|snapchat/i,
   threads: /ثريدز|threads/i,
@@ -65,6 +67,7 @@ export const PROVIDER_LABEL: Record<string, string> = {
   x: "إكس (تويتر)",
   pinterest: "بنترست",
   youtube: "يوتيوب",
+  telegram: "تيليجرام",
   tiktok: "تيك توك",
   snapchat: "سناب شات",
   threads: "ثريدز",

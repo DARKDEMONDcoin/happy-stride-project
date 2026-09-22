@@ -15,6 +15,7 @@ import { WebflowConnect } from "@/components/app/WebflowConnect";
 import { GhostConnect } from "@/components/app/GhostConnect";
 import { MetaDirect } from "@/components/app/MetaDirect";
 import { WhatsAppCommand } from "@/components/app/WhatsAppCommand";
+import { TelegramCommand } from "@/components/app/TelegramCommand";
 import { team } from "@/data/team";
 import { Portrait } from "@/components/site/Portrait";
 import { integrationStatusLabel } from "@/data/app";
@@ -493,6 +494,7 @@ function IntegrationsPage() {
 
             {!isMeta(detailRow.provider) &&
             detailRow.provider !== "whatsapp" &&
+            detailRow.provider !== "telegram" &&
             isPipedreamProvider(detailRow.provider) &&
             pdReady === false ? (
               <p className="mt-4 rounded-2xl bg-amber/10 px-4 py-3 text-sm font-semibold">
@@ -501,6 +503,7 @@ function IntegrationsPage() {
             ) : null}
             {!isMeta(detailRow.provider) &&
             detailRow.provider !== "whatsapp" &&
+            detailRow.provider !== "telegram" &&
             isPipedreamProvider(detailRow.provider) &&
             pdEnv === "development" ? (
               <p className="mt-4 rounded-2xl bg-amber/10 px-4 py-3 text-sm font-semibold">
@@ -511,6 +514,10 @@ function IntegrationsPage() {
             {detailRow.provider === "whatsapp" && workspace ? (
               <div className="mt-5">
                 <WhatsAppCommand workspaceId={workspace.id} />
+              </div>
+            ) : detailRow.provider === "telegram" && workspace ? (
+              <div className="mt-5">
+                <TelegramCommand workspaceId={workspace.id} />
               </div>
             ) : isMeta(detailRow.provider) ? (
               <div className="mt-4">
