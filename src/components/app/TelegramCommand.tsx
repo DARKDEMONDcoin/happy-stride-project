@@ -30,6 +30,7 @@ export function TelegramCommand({ workspaceId }: { workspaceId: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [newCode, setNewCode] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
+  const [mode, setMode] = useState<"shared" | "own" | null>(null);
   const [chatId, setChatId] = useState("");
   const [sendTest, setSendTest] = useState(true);
   const [chats, setChats] = useState<{ id: string; title: string; type: string }[] | null>(null);
