@@ -91,9 +91,12 @@ export async function resolvePostImage(
   try {
     const { imageBrief, ownedHeroImage } = await import("./image-gen.server");
     const prompt = await imageBrief({
-      userRequest: request.slice(0, 500),
-      ...(context.industry ? { industry: context.industry } : {}),
-    } as Parameters<typeof imageBrief>[0]);
+      request: request.slice(0, 500),
+      brand: {
+        ...(context.industry ? { industry: context.industry } : {}),
+        country: context.country ?? null,
+      },
+    });
     const url = await ownedHeroImage(admin, workspaceId, prompt);
     if (url) return { url, origin: "generated", note: "🖼️ صورة مولّدة بهوية علامتك" };
   } catch (error) {
