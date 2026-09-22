@@ -432,10 +432,14 @@ export async function runEmployeeTurn(
       ) || data.message.length > 220;
 
     // نيّة الرسالة: عمل (مخرج جاهز) أم سؤال/دردشة يُجاب عليها فقط بلا فرض خدمات.
-    const { chatIntent, intentBlock, wantsImageRequest } = await import("./chat-intent");
+    const { chatIntent, intentBlock, wantsImageRequest, refusesImageRequest } = await import(
+      "./chat-intent"
+    );
     const intent = chatIntent(data.message);
+    /** رفض صريح للصورة: «بدون صورة» يمنع أي توليد مهما كان الموظف أو المخرج. */
+    const imageRefused = refusesImageRequest(data.message);
     /** طلب صورة صريح من المستخدم: تُولَّد صورة فعلية أياً كان الموظف. */
-    const explicitImage = intent === "work" && wantsImageRequest(data.message);
+    const explicitImage = intent === "work" && !imageRefused && wantsImageRequest(data.message);
     /** البثّ الحقيقي للطلبات الصريحة فقط — الأسئلة والدردشة تُجاب فوراً بلا بثّ. */
     const streaming = emit !== noEmit && intent === "work";
     // عقل الخبير: عمق التخصص + سؤال واحد بخيارات عند الغموض الجوهري فقط.
