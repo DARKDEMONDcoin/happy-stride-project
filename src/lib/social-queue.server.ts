@@ -6,6 +6,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { extractPostText } from "./post-format";
+import { publishBlockers } from "./publish-guard";
+
+/** مالك النشر على منصات التواصل — حدود الاختصاص مفروضة برمجياً لا بالتعليمات فقط. */
+const OWNER_OF_SOCIAL = "sonny";
 
 type Admin = SupabaseClient<Database>;
 
