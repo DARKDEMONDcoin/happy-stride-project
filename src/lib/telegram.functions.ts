@@ -163,3 +163,23 @@ export const disconnectTelegram = createServerFn({ method: "POST" })
       .eq("provider", "telegram");
     return { ok: true as const };
   });
+
+/** يكتشف القنوات/المحادثات المتاحة لبوت العميل ليختار منها بدل كتابة المعرّف يدوياً. */
+export const discoverTelegramChats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        botToken: z.string().trim().default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const admin = await assertOwner(context.supabase, data.workspaceId);
+    const { discoverChats, loadTelegramConfig } = await import("./telegram.server");
+    const token = data.botToken || (await loadTelegramConfig(admin, data.workspaceId))?.botToken;
+    if (!token) throw new Error("اكتب توكن البوت أولاً.");
+    const chats = await discoverChats(token);
+    return { chats };
+  });
