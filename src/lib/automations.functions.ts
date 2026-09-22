@@ -11,40 +11,43 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const cadences = ["daily", "weekly", "monthly"] as const;
 export type Cadence = (typeof cadences)[number];
 
-/** يحسب موعد التشغيل القادم بتوقيت UTC انطلاقاً من التكرار واليوم والساعة. */
+/**
+ * يحسب موعد التشغيل القادم بالمنطقة الزمنية التي يعيش فيها صاحب العمل:
+ * الساعة التي يختارها تعني ساعته هو، لا توقيت غرينتش.
+ */
 export function nextRun(
   cadence: Cadence,
   dayOfWeek: number,
   hour: number,
   from: Date = new Date(),
+  timezone = "Africa/Cairo",
 ): Date {
-  const next = new Date(from);
-  next.setUTCMinutes(0, 0, 0);
-  next.setUTCHours(hour);
+  const tz = timezone.trim() || "Africa/Cairo";
+  const startOfToday = localParts(tz, from);
 
-  if (cadence === "daily") {
-    if (next <= from) next.setUTCDate(next.getUTCDate() + 1);
-    return next;
-  }
+  for (let add = 0; add <= 400; add += 1) {
+    const candidate = zonedTimeToUtc(
+      tz,
+      startOfToday.y,
+      startOfToday.m,
+      startOfToday.d + add,
+      hour,
+      0,
+    );
+    if (candidate <= from) continue;
+    const { dow, d } = localParts(tz, candidate);
 
-  if (cadence === "weekly") {
-    const delta = (dayOfWeek - next.getUTCDay() + 7) % 7;
-    next.setUTCDate(next.getUTCDate() + delta);
-    if (next <= from) next.setUTCDate(next.getUTCDate() + 7);
-    return next;
+    if (cadence === "daily") return candidate;
+    if (cadence === "weekly") {
+      if (dow === dayOfWeek) return candidate;
+      continue;
+    }
+    // شهرياً: أول يوم مطابق ليوم الأسبوع المختار داخل الشهر
+    if (dow === dayOfWeek && d <= 7) return candidate;
   }
-
-  // شهرياً: أول يوم مطابق في الشهر القادم إن فات موعد هذا الشهر
-  next.setUTCDate(1);
-  const delta = (dayOfWeek - next.getUTCDay() + 7) % 7;
-  next.setUTCDate(1 + delta);
-  if (next <= from) {
-    next.setUTCMonth(next.getUTCMonth() + 1, 1);
-    const d = (dayOfWeek - next.getUTCDay() + 7) % 7;
-    next.setUTCDate(1 + d);
-  }
-  return next;
+  return new Date(from.getTime() + 86_400_000);
 }
+
 
 const base = {
   workspaceId: z.string().uuid(),
