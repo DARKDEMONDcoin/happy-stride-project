@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { localParts, zonedTimeToUtc } from "./timezone";
 
 /**
  * جدولة مهام نور: تعمل تلقائياً (يومياً/أسبوعياً/شهرياً) بنفس نواة التنفيذ اليدوية،
@@ -11,40 +12,43 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const cadences = ["daily", "weekly", "monthly"] as const;
 export type Cadence = (typeof cadences)[number];
 
-/** يحسب موعد التشغيل القادم بتوقيت UTC انطلاقاً من التكرار واليوم والساعة. */
+/**
+ * يحسب موعد التشغيل القادم بالمنطقة الزمنية التي يعيش فيها صاحب العمل:
+ * الساعة التي يختارها تعني ساعته هو، لا توقيت غرينتش.
+ */
 export function nextRun(
   cadence: Cadence,
   dayOfWeek: number,
   hour: number,
   from: Date = new Date(),
+  timezone = "Africa/Cairo",
 ): Date {
-  const next = new Date(from);
-  next.setUTCMinutes(0, 0, 0);
-  next.setUTCHours(hour);
+  const tz = timezone.trim() || "Africa/Cairo";
+  const startOfToday = localParts(tz, from);
 
-  if (cadence === "daily") {
-    if (next <= from) next.setUTCDate(next.getUTCDate() + 1);
-    return next;
-  }
+  for (let add = 0; add <= 400; add += 1) {
+    const candidate = zonedTimeToUtc(
+      tz,
+      startOfToday.y,
+      startOfToday.m,
+      startOfToday.d + add,
+      hour,
+      0,
+    );
+    if (candidate <= from) continue;
+    const { dow, d } = localParts(tz, candidate);
 
-  if (cadence === "weekly") {
-    const delta = (dayOfWeek - next.getUTCDay() + 7) % 7;
-    next.setUTCDate(next.getUTCDate() + delta);
-    if (next <= from) next.setUTCDate(next.getUTCDate() + 7);
-    return next;
+    if (cadence === "daily") return candidate;
+    if (cadence === "weekly") {
+      if (dow === dayOfWeek) return candidate;
+      continue;
+    }
+    // شهرياً: أول يوم مطابق ليوم الأسبوع المختار داخل الشهر
+    if (dow === dayOfWeek && d <= 7) return candidate;
   }
-
-  // شهرياً: أول يوم مطابق في الشهر القادم إن فات موعد هذا الشهر
-  next.setUTCDate(1);
-  const delta = (dayOfWeek - next.getUTCDay() + 7) % 7;
-  next.setUTCDate(1 + delta);
-  if (next <= from) {
-    next.setUTCMonth(next.getUTCMonth() + 1, 1);
-    const d = (dayOfWeek - next.getUTCDay() + 7) % 7;
-    next.setUTCDate(1 + d);
-  }
-  return next;
+  return new Date(from.getTime() + 86_400_000);
 }
+
 
 const base = {
   workspaceId: z.string().uuid(),
@@ -77,6 +81,7 @@ export const saveAutomation = createServerFn({ method: "POST" })
         cadence: z.enum(cadences),
         dayOfWeek: z.number().int().min(0).max(6),
         hour: z.number().int().min(0).max(23),
+        timezone: z.string().min(2).max(64).default("Africa/Cairo"),
         autoPublish: z.boolean().default(false),
         active: z.boolean().default(true),
       })
@@ -92,9 +97,16 @@ export const saveAutomation = createServerFn({ method: "POST" })
       cadence: data.cadence,
       day_of_week: data.dayOfWeek,
       hour: data.hour,
+      timezone: data.timezone,
       auto_publish: data.autoPublish,
       active: data.active,
-      next_run_at: nextRun(data.cadence, data.dayOfWeek, data.hour).toISOString(),
+      next_run_at: nextRun(
+        data.cadence,
+        data.dayOfWeek,
+        data.hour,
+        new Date(),
+        data.timezone,
+      ).toISOString(),
     };
 
     if (data.id) {

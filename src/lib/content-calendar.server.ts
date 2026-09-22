@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { ambientPulse, timezoneForCountry } from "./live-context.server";
+import { localParts, zonedTimeToUtc } from "./timezone";
 import { craft, personas } from "./nour-run.server";
 import { memoryBlock } from "./memory.server";
 import { adaptForProvider } from "./post-format";
@@ -256,24 +257,15 @@ function slotDates(input: PlanInput): { at: Date; provider: string }[] {
   const start = input.startAt ? new Date(input.startAt) : new Date();
   const primary = input.providers[0] ?? "instagram";
   const hours = BEST_HOURS[primary] ?? [11, 14, 20];
-  // إزاحة المنطقة الزمنية (تقريب دقيق كفاية للجدولة)
-  const offsetMin = tzOffsetMinutes(input.timezone, start);
+  // يوم البداية بالتوقيت المحلي للعلامة، والإزاحة تُحسب لكل موعد على حدة
+  // حتى لا تنزاح المواعيد ساعة كاملة عند تغيّر التوقيت الصيفي داخل الخطة.
+  const first = localParts(input.timezone, start);
   for (let d = 0; d < input.days; d += 1) {
     for (let i = 0; i < input.perDay; i += 1) {
       const hour = hours[i % hours.length]!;
-      const local = new Date(
-        Date.UTC(
-          start.getUTCFullYear(),
-          start.getUTCMonth(),
-          start.getUTCDate() + 1 + d,
-          hour,
-          0,
-          0,
-        ),
-      );
-      const utc = new Date(local.getTime() - offsetMin * 60_000);
+      const at = zonedTimeToUtc(input.timezone, first.y, first.m, first.d + 1 + d, hour, 0);
       out.push({
-        at: utc,
+        at,
         provider: input.providers[(d * input.perDay + i) % input.providers.length] ?? primary,
       });
     }
@@ -281,28 +273,32 @@ function slotDates(input: PlanInput): { at: Date; provider: string }[] {
   return out;
 }
 
-function tzOffsetMinutes(tz: string, at: Date): number {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      timeZoneName: "shortOffset",
-    }).formatToParts(at);
-    const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+3";
-    const m = name.match(/([+-])(\d{1,2})(?::?(\d{2}))?/);
-    if (!m) return /^(GMT|UTC)$/i.test(name.trim()) ? 0 : 180;
-    const sign = m[1] === "-" ? -1 : 1;
-    return sign * (Number(m[2]) * 60 + Number(m[3] ?? 0));
-  } catch {
-    return 180;
-  }
+
+/**
+ * المنطقة الزمنية المعتمدة للعلامة: ما اختاره المالك في الطيار الآلي أولاً،
+ * ثم استنتاجها من الدولة — حتى لا تختلف ساعة التقويم عن ساعة الجدولة.
+ */
+export async function brandTimeZone(
+  admin: Admin,
+  workspaceId: string,
+  country?: string | null,
+): Promise<string> {
+  const { data } = await admin
+    .from("social_autopilot")
+    .select("timezone")
+    .eq("workspace_id", workspaceId)
+    .limit(1)
+    .maybeSingle();
+  return data?.timezone?.trim() || timezoneForCountry(country);
 }
 
 export async function planCalendar(
   admin: Admin,
   input: PlanInput,
 ): Promise<{ created: number; batch: string }> {
-  const slots = slotDates(input).slice(0, 45);
   const ctx = await workspaceContext(admin, input.workspaceId);
+  const timeZone = await brandTimeZone(admin, input.workspaceId, ctx.ws.country);
+  const slots = slotDates({ ...input, timezone: timeZone }).slice(0, 45);
   const { freeChat } = await import("./nour-research.server");
 
   const recentTitles = ctx.recent
@@ -311,7 +307,6 @@ export async function planCalendar(
     .slice(0, 15);
 
   const dialect = await resolveDialect(admin, input.workspaceId, input.dialect);
-  const timeZone = timezoneForCountry(ctx.ws.country);
   const pulse = await ambientPulse(
     { country: ctx.ws.country, timeZone, topics: [input.topic ?? ctx.ws.industry] },
     9_000,

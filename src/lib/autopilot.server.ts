@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { scorePost } from "./post-quality";
+import { localParts, zonedTimeToUtc } from "./timezone";
 
 type Admin = SupabaseClient<Database>;
 export type AutopilotRow = Database["public"]["Tables"]["social_autopilot"]["Row"];
@@ -56,44 +57,8 @@ export type Timing = {
   hours?: number[] | null;
 };
 
-/** فرق المنطقة الزمنية بالدقائق عن UTC في لحظة معيّنة (يراعي التوقيت الصيفي). */
-function offsetMinutes(timeZone: string, at: Date): number {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hour12: false,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).formatToParts(at);
-    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
-    const asUtc = Date.UTC(
-      get("year"),
-      get("month") - 1,
-      get("day"),
-      get("hour") % 24,
-      get("minute"),
-      get("second"),
-    );
-    return Math.round((asUtc - at.getTime()) / 60000);
-  } catch {
-    return 0;
-  }
-}
+// حساب المناطق الزمنية موحّد في src/lib/timezone.ts حتى لا تختلف الساعة بين الميزات.
 
-/** أجزاء التاريخ المحلي (سنة/شهر/يوم/يوم الأسبوع) في منطقة زمنية. */
-function localParts(timeZone: string, at: Date) {
-  const shifted = new Date(at.getTime() + offsetMinutes(timeZone, at) * 60000);
-  return {
-    y: shifted.getUTCFullYear(),
-    m: shifted.getUTCMonth(),
-    d: shifted.getUTCDate(),
-    dow: shifted.getUTCDay(),
-  };
-}
 
 /** يحوّل "HH:MM" إلى دقائق، ويتجاهل أي صيغة غير صالحة. */
 function parseSlot(slot: string): number | null {
@@ -131,8 +96,7 @@ export function nextRun(timing: Timing, from: Date = new Date()): Date {
     const base = new Date(from.getTime() + add * 86_400_000);
     const { y, m, d } = localParts(timezone, base);
     for (const mins of minutes) {
-      const guess = Date.UTC(y, m, d, Math.floor(mins / 60), mins % 60);
-      const candidate = new Date(guess - offsetMinutes(timezone, new Date(guess)) * 60000);
+      const candidate = zonedTimeToUtc(timezone, y, m, d, Math.floor(mins / 60), mins % 60);
       if (candidate <= from) continue;
       if (!days.includes(localParts(timezone, candidate).dow)) continue;
       return candidate;

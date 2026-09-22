@@ -34,20 +34,38 @@ export const Route = createFileRoute("/api/public/nour-automations")({
         if (!authorized) return new Response("unauthorized", { status: 401 });
 
         const now = new Date();
-        const { data: due, error } = await supabaseAdmin
+        // حجز الصف قبل تنفيذه يمنع تشغيل نفس المهمة مرتين لو وصل نداءان معاً.
+        const LOCK_MS = 15 * 60 * 1000;
+        const staleBefore = new Date(now.getTime() - LOCK_MS).toISOString();
+        const { data: candidates, error } = await supabaseAdmin
           .from("automations")
           .select("*")
           .eq("active", true)
           .lte("next_run_at", now.toISOString())
+          .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+          .order("next_run_at", { ascending: true })
           .limit(20);
         if (error) return new Response(error.message, { status: 500 });
+
+        const due: NonNullable<typeof candidates> = [];
+        for (const row of candidates ?? []) {
+          const { data: claimed } = await supabaseAdmin
+            .from("automations")
+            .update({ locked_at: now.toISOString() })
+            .eq("id", row.id)
+            .eq("active", true)
+            .lte("next_run_at", now.toISOString())
+            .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+            .select("id");
+          if (claimed?.length) due.push(row);
+        }
 
         const { executeSkill } = await import("@/lib/nour-run.server");
         const { nextRun } = await import("@/lib/automations.functions");
 
         const report: { id: string; label: string; status: string; taskId?: string | null }[] = [];
 
-        for (const row of due ?? []) {
+        for (const row of due) {
           try {
             const run = await executeSkill(supabaseAdmin, {
               workspaceId: row.workspace_id,
@@ -82,11 +100,13 @@ export const Route = createFileRoute("/api/public/nour-automations")({
                   : published
                     ? `نجح · مسودة على ${published}`
                     : "نجح",
+                locked_at: null,
                 next_run_at: nextRun(
                   row.cadence as "daily" | "weekly" | "monthly",
                   row.day_of_week,
                   row.hour,
                   now,
+                  (row as { timezone?: string | null }).timezone ?? "Africa/Cairo",
                 ).toISOString(),
               })
               .eq("id", row.id);
@@ -99,11 +119,13 @@ export const Route = createFileRoute("/api/public/nour-automations")({
               .update({
                 last_run_at: now.toISOString(),
                 last_status: `فشل: ${message.slice(0, 200)}`,
+                locked_at: null,
                 next_run_at: nextRun(
                   row.cadence as "daily" | "weekly" | "monthly",
                   row.day_of_week,
                   row.hour,
                   now,
+                  (row as { timezone?: string | null }).timezone ?? "Africa/Cairo",
                 ).toISOString(),
               })
               .eq("id", row.id);

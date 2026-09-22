@@ -49,8 +49,11 @@ const STATUS: Record<string, { label: string; className: string }> = {
 
 function when(post: SocialPost) {
   const date = new Date(post.published_at ?? post.scheduled_at);
-  return date.toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" });
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const text = date.toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" });
+  return tz ? `${text} · بتوقيتك` : text;
 }
+
 
 function QueuePage() {
   const { data: workspace } = useWorkspace();

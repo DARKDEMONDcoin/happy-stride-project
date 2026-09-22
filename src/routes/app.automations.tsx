@@ -69,6 +69,7 @@ function Form({ workspaceId, onClose }: { workspaceId: string; onClose: () => vo
           cadence,
           dayOfWeek,
           hour,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Cairo",
           autoPublish,
           active: true,
         },
@@ -308,7 +309,7 @@ function AutomationsPage() {
                   {getSkill(a.skill_id)?.title ?? a.skill_id} ·{" "}
                   {cadenceLabel[a.cadence] ?? a.cadence}
                   {a.cadence === "daily" ? "" : ` · ${days[a.day_of_week] ?? ""}`} ·{" "}
-                  {String(a.hour).padStart(2, "0")}:00 UTC
+                  {String(a.hour).padStart(2, "0")}:00 بتوقيتك
                   {a.auto_publish ? " · نشر تلقائي كمسودة" : ""}
                 </span>
                 <span className="mt-1 block truncate text-xs text-ink-soft">
