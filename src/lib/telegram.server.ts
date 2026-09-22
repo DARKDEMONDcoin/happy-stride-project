@@ -9,7 +9,10 @@ import type { Database } from "@/integrations/supabase/types";
 type Admin = SupabaseClient<Database>;
 
 export type TelegramConfig = {
+  /** توكن بوت العميل، أو فارغ عند استخدام بوت سهل المشترك. */
   botToken: string;
+  /** true عندما تستخدم مساحة العمل بوت سهل الجاهز بدل بوت خاص. */
+  shared?: boolean;
   botUsername?: string;
   chatId: string;
   chatTitle?: string;
@@ -27,6 +30,30 @@ export function publicOrigin(): string {
 
 export function webhookUrlFor(workspaceId: string): string {
   return `${publicOrigin()}/api/public/telegram/webhook?ws=${workspaceId}`;
+}
+
+/** ويبهوك واحد لبوت سهل المشترك — نستنتج مساحة العمل من المحادثة نفسها. */
+export function sharedWebhookUrl(): string {
+  return `${publicOrigin()}/api/public/telegram/webhook?shared=1`;
+}
+
+/** توكن بوت سهل الجاهز (اختياري) — يسمح بالنشر بلا إنشاء بوت من BotFather. */
+export async function platformBotToken(): Promise<string> {
+  const { getSecret } = await import("./secrets.server");
+  return (await getSecret("TELEGRAM_BOT_TOKEN")).trim();
+}
+
+/** بيانات بوت سهل الجاهز، أو null إن لم يُضبط أو كان توكنه غير صالح. */
+export async function platformBot(): Promise<{ token: string; username: string } | null> {
+  const token = await platformBotToken();
+  if (!token) return null;
+  try {
+    const me = await tg<{ username?: string }>(token, "getMe");
+    return { token, username: me.username ?? "" };
+  } catch (error) {
+    console.error("[telegram] platform bot token invalid:", error);
+    return null;
+  }
 }
 
 /** سرّ التحقق من الويبهوك، مشتق من توكن البوت نفسه (لا نخزّن سرّاً إضافياً). */
