@@ -6149,6 +6149,67 @@
     height: 12rem;
   }
 }
+@media (min-width: 641px) and (max-height: 760px) {
+  .sauth-topbar {
+    padding: 12px 16px;
+  }
+
+  .sauth-center {
+    min-height: 0;
+    gap: 7px;
+    padding: 8px 20px;
+  }
+
+  .sauth-card-body {
+    padding: 14px 24px 12px;
+  }
+
+  .sauth-title {
+    margin-bottom: 8px;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .sauth-google,
+  .sauth-input,
+  .sauth-submit {
+    min-height: 34px;
+    padding-block: 6px;
+  }
+
+  .sauth-divider {
+    margin-block: 7px;
+  }
+
+  .sauth-form {
+    gap: 7px;
+  }
+
+  .sauth-field {
+    gap: 2px;
+  }
+
+  .sauth-check {
+    gap: 7px;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .sauth-check input {
+    width: 14px;
+    height: 14px;
+  }
+
+  .sauth-card-foot {
+    padding-block: 7px;
+  }
+
+  .sauth-footer {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+}
+
 @media (max-width: 640px) {
   .integration-team-stage .team-orbit-compact {
     min-height: 33rem;
