@@ -8,7 +8,14 @@ import { isPipedreamProvider } from "@/data/pipedream-apps";
 import { startPipedreamConnect } from "@/lib/pipedream.functions";
 
 /** منصات تُربط بنموذج داخلي على صفحة التكاملات (مفتاح/رابط بدل OAuth الوسيط). */
-const DIALOG_PROVIDERS = new Set(["wordpress", "indexnow", "shopify", "webflow", "ghost"]);
+const DIALOG_PROVIDERS = new Set([
+  "wordpress",
+  "indexnow",
+  "shopify",
+  "webflow",
+  "ghost",
+  "telegram",
+]);
 
 type Props = {
   workspaceId: string | undefined;

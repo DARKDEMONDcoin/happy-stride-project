@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { telegramStatus } from "@/lib/telegram.functions";
 
 export type Workspace = Tables<"workspaces">;
 export type Profile = Tables<"profiles">;
@@ -372,6 +374,7 @@ export type PipedreamAccount = Tables<"pipedream_accounts">;
 
 /** حسابات النشر المتصلة؛ تيليجرام لا يُعد متصلاً إلا من الربط المباشر. */
 export function useConnectedAccounts(workspaceId?: string) {
+  const getTelegramStatus = useServerFn(telegramStatus);
   return useQuery({
     queryKey: ["pipedream-accounts", workspaceId],
     enabled: !!workspaceId,
@@ -387,17 +390,10 @@ export function useConnectedAccounts(workspaceId?: string) {
             .eq("workspace_id", workspaceId)
             .eq("status", "connected"),
         ),
-        must<Integration[]>(
-          supabase
-            .from("integrations")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .eq("provider", "telegram")
-            .eq("status", "connected"),
-        ),
+        getTelegramStatus({ data: { workspaceId } }),
       ]);
       const nonTelegramAccounts = accounts.filter((account) => account.provider !== "telegram");
-      if (!telegram.length) return nonTelegramAccounts;
+      if (!telegram.connected) return nonTelegramAccounts;
       const now = new Date().toISOString();
       return [
         ...nonTelegramAccounts,
@@ -407,7 +403,7 @@ export function useConnectedAccounts(workspaceId?: string) {
           provider: "telegram",
           app_slug: "telegram_bot_api",
           account_id: `direct:${workspaceId}`,
-          account_name: telegram[0]?.account ?? "Telegram",
+          account_name: telegram.chatTitle || telegram.botUsername || "Telegram",
           status: "connected",
           healthy: true,
           last_error: null,
