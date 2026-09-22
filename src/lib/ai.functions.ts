@@ -1222,15 +1222,14 @@ export async function runEmployeeTurn(
           return imageUrl;
         })();
 
-    // مخرج واحد جاهز للنشر: المستخدم يريد المنشور نفسه فقط. كنا نلحق تعليق الموظف
-    // خلف فاصل «---» فيبدو الرد مزدحماً وتختلط لغة المساعد بنص المنشور.
+    // مخرج واحد جاهز للنشر: ما يراه المالك في المحادثة هو نص المنشور نفسه لا غير —
+    // بلا مقدمة «جهّزت لك…» ولا أقسام التوقيت والخطوة التالية، حتى لا يختلط كلام
+    // الموظف بنص المنشور ولا تلتقط لوحة النشر الجزء الخطأ.
     if (deliverables.length === 1) {
       const postBody = (deliverables[0]?.body ?? "").trim();
-      const head = postBody.slice(0, 40);
-      if (postBody.length > 60 && head && !reply.includes(head)) {
-        reply = postBody;
-      }
+      if (postBody.length > 60) reply = postBody;
     }
+
 
     reply = fillPlaceholders(reply, workspace.name, ws.website ?? null, brandProducts);
     reply = sanitizeActionClaims(reply, connected);
