@@ -207,12 +207,12 @@ export async function saveTelegramConfig(
 }
 
 /** يسجّل ويبهوك البوت ليصل كلام صاحب العمل إلى الفريق. */
-export async function registerWebhook(workspaceId: string, botToken: string) {
+export async function registerWebhook(workspaceId: string, botToken: string, shared = false) {
   await tg(botToken, "setWebhook", {
-    url: webhookUrlFor(workspaceId),
+    url: shared ? sharedWebhookUrl() : webhookUrlFor(workspaceId),
     secret_token: await webhookSecret(botToken),
     allowed_updates: ["message", "edited_message", "channel_post"],
-    drop_pending_updates: true,
+    drop_pending_updates: false,
   });
 }
 
