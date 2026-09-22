@@ -542,6 +542,12 @@ export function PublishPanel({
           failed.push(`${appLabel(provider)}: نشر الفيديو غير متاح على هذه المنصة`);
           continue;
         }
+        if (provider === "telegram" && media.length && text.trim().length > 1024) {
+          failed.push(
+            `${appLabel(provider)}: مع الصور أو الفيديو الحد 1024 حرفاً حتى يبقى النص والوسائط في منشور واحد`,
+          );
+          continue;
+        }
         const multi =
           provider === "facebook" || provider === "instagram" || provider === "telegram";
         const base = {

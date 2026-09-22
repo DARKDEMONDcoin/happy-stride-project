@@ -38,3 +38,8 @@ test("Telegram uses its real message limit", () => {
   const report = scorePost({ text: "ن".repeat(4097), provider: "telegram", hasMedia: false });
   expect(report.blockers.some((check) => check.id === "limit")).toBe(true);
 });
+
+test("Telegram applies the smaller caption limit when media is attached", () => {
+  const report = scorePost({ text: "ن".repeat(1025), provider: "telegram", hasMedia: true });
+  expect(report.blockers.some((check) => check.id === "limit")).toBe(true);
+});

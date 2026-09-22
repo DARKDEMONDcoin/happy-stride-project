@@ -626,12 +626,18 @@ const EMPLOYEE_COPY: Record<string, { prompts: string[]; greetings: string[] }> 
 const BAR_BRAND = new Set(["sonny", "nour", "dana"]);
 const BAR_WORK = new Set(["sonny", "eva", "sam", "nour", "adam", "dana"]);
 
-function useTypewriter(lines: string[], pause = 1700) {
+function useTypewriter(lines: string[], pause = 1700, enabled = true) {
   const [line, setLine] = useState(0);
   const [length, setLength] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (!enabled) {
+      setLine(0);
+      setLength(lines[0]?.length ?? 0);
+      setDeleting(false);
+      return;
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setLength(lines[0]?.length ?? 0);
       return;
@@ -648,7 +654,7 @@ function useTypewriter(lines: string[], pause = 1700) {
       } else setLength((value) => value + (deleting ? -1 : 1));
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [deleting, length, line, lines, pause]);
+  }, [deleting, enabled, length, line, lines, pause]);
 
   return lines[line]?.slice(0, length) ?? "";
 }
@@ -763,13 +769,8 @@ function ChatView({
     EMPLOYEE_COPY[id] ?? EMPLOYEE_COPY["sonny"]!;
   // أثناء وجود رسائل لا نشغّل مؤقتات كتابة مستمرة تعيد رسم صفحة المحادثة كلها.
   const hasMessages = Boolean((messages ?? []).length || pending);
-  const rotatingPlaceholder = useTypewriter(
-    hasMessages ? [employeeCopy.prompts[0] ?? ""] : employeeCopy.prompts,
-  );
-  const rotatingGreeting = useTypewriter(
-    hasMessages ? [employeeCopy.greetings[0] ?? ""] : employeeCopy.greetings,
-    2400,
-  );
+  const rotatingPlaceholder = useTypewriter(employeeCopy.prompts, 1700, !hasMessages);
+  const rotatingGreeting = useTypewriter(employeeCopy.greetings, 2400, !hasMessages);
   const userName = profile?.full_name?.trim().split(/\s+/)[0] || "صديقي";
   /** آخر رسالة فشل إرسالها — لزر «أعد المحاولة». */
   const [pendingText, setPendingText] = useState<string | null>(null);

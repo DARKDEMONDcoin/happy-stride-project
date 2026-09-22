@@ -315,15 +315,16 @@ export function scorePost({
   );
 
   // ٣) حد المنصة — حاجز نشر.
-  const overLimit = chars > spec.hardLimit;
+  const effectiveLimit = provider === "telegram" && hasMedia ? 1024 : spec.hardLimit;
+  const overLimit = chars > effectiveLimit;
   add(
     "limit",
     `الطول ضمن حد ${PROVIDER_LABEL[provider] ?? provider}`,
     12,
     overLimit ? "fail" : "pass",
     overLimit
-      ? `النص ${chars} حرفاً والحد ${spec.hardLimit} — اختصره وإلا سيُقتطع.`
-      : `${chars} حرفاً من ${spec.hardLimit}.`,
+      ? `النص ${chars} حرفاً والحد ${effectiveLimit}${provider === "telegram" && hasMedia ? " مع الوسائط" : ""} — اختصره وإلا سترفضه المنصة.`
+      : `${chars} حرفاً من ${effectiveLimit}.`,
   );
 
   // ٤) الطول المثالي للتفاعل.
