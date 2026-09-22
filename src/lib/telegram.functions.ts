@@ -149,7 +149,7 @@ export const testTelegram = createServerFn({ method: "POST" })
       chat_id: config.chatId,
     });
     // إعادة تسجيل الويبهوك تضمن استمرار وصول الرسائل بعد أي انقطاع.
-    await registerWebhook(data.workspaceId, config.botToken);
+    await registerWebhook(data.workspaceId, config.botToken, Boolean(config.shared));
     await tg(config.botToken, "sendMessage", {
       chat_id: config.chatId,
       text: "✅ اختبار ناجح — تيليجرام مربوط وفريق سهل جاهز للنشر.",
