@@ -348,8 +348,12 @@
 
 /* شاشة ترقية الأسعار على الهاتف */
 @keyframes sahl-pricing-wave-run {
-  from { transform: translate3d(22%, 0, 0); }
-  to { transform: translate3d(-22%, 0, 0); }
+  from {
+    transform: translate3d(22%, 0, 0);
+  }
+  to {
+    transform: translate3d(-22%, 0, 0);
+  }
 }
 
 @media (max-width: 767px) {
@@ -380,10 +384,25 @@
     z-index: -1;
     inset: 0;
     background-image:
-      radial-gradient(circle, color-mix(in oklab, var(--primary) 27%, transparent) 1px, transparent 1.45px),
-      radial-gradient(circle, color-mix(in oklab, var(--gold) 25%, transparent) 1px, transparent 1.45px),
-      radial-gradient(circle, color-mix(in oklab, var(--jade) 25%, transparent) 1px, transparent 1.45px);
-    background-position: 0 0, 14px 14px, 28px 28px;
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--primary) 27%, transparent) 1px,
+        transparent 1.45px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--gold) 25%, transparent) 1px,
+        transparent 1.45px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--jade) 25%, transparent) 1px,
+        transparent 1.45px
+      );
+    background-position:
+      0 0,
+      14px 14px,
+      28px 28px;
     background-size: 42px 42px;
     mask-image: linear-gradient(to bottom, black, transparent 92%);
     opacity: 0.62;
@@ -396,10 +415,25 @@
     position: absolute;
     inset: 0 -28%;
     background-image:
-      radial-gradient(circle, color-mix(in oklab, var(--primary) 64%, transparent) 2px, transparent 2.8px),
-      radial-gradient(circle, color-mix(in oklab, var(--gold) 60%, transparent) 2px, transparent 2.8px),
-      radial-gradient(circle, color-mix(in oklab, var(--jade) 58%, transparent) 2px, transparent 2.8px);
-    background-position: 0 0, 14px 14px, 28px 28px;
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--primary) 64%, transparent) 2px,
+        transparent 2.8px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--gold) 60%, transparent) 2px,
+        transparent 2.8px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--jade) 58%, transparent) 2px,
+        transparent 2.8px
+      );
+    background-position:
+      0 0,
+      14px 14px,
+      28px 28px;
     background-size: 42px 42px;
     mask-image: linear-gradient(125deg, transparent 38%, black 46%, black 54%, transparent 62%);
     mask-repeat: no-repeat;
@@ -583,9 +617,15 @@
     height: 0.88rem;
   }
 
-  .sahl-upgrade-perks svg[data-tone="primary"] { color: var(--primary); }
-  .sahl-upgrade-perks svg[data-tone="gold"] { color: var(--gold-deep); }
-  .sahl-upgrade-perks svg[data-tone="jade"] { color: var(--jade-deep); }
+  .sahl-upgrade-perks svg[data-tone="primary"] {
+    color: var(--primary);
+  }
+  .sahl-upgrade-perks svg[data-tone="gold"] {
+    color: var(--gold-deep);
+  }
+  .sahl-upgrade-perks svg[data-tone="jade"] {
+    color: var(--jade-deep);
+  }
 
   .sahl-upgrade-billing {
     display: grid;
@@ -624,7 +664,9 @@
     border-radius: 999px;
   }
 
-  .is-selected .sahl-upgrade-radio { border-color: var(--primary); }
+  .is-selected .sahl-upgrade-radio {
+    border-color: var(--primary);
+  }
   .is-selected .sahl-upgrade-radio i {
     width: 0.52rem;
     height: 0.52rem;
@@ -744,28 +786,83 @@
     padding-inline: 0.78rem;
   }
 
-  .sahl-upgrade-topbar { min-height: 1.65rem; }
-  .sahl-upgrade-close { width: 1.65rem; height: 1.65rem; }
-  .sahl-upgrade-brand { width: 1.65rem; height: 1.65rem; }
-  .sahl-upgrade-heading p { display: none; }
-  .sahl-upgrade-heading h1 { margin-top: 0; font-size: 1.22rem; }
-  .sahl-upgrade-tabs { margin-top: 0.28rem; }
-  .sahl-upgrade-tabs button { height: 1.72rem; }
-  .sahl-upgrade-plan { padding-top: 0.28rem; }
-  .sahl-upgrade-plan-title h2 { font-size: 1rem; }
-  .sahl-upgrade-plan-title p { font-size: 0.56rem; }
-  .sahl-upgrade-perks { margin-top: 0.25rem; padding-block: 0.2rem; }
-  .sahl-upgrade-perks li { min-height: 1.08rem; font-size: 0.6rem; }
-  .sahl-upgrade-perks svg { width: 0.76rem; height: 0.76rem; }
-  .sahl-upgrade-billing { margin-top: 0.28rem; }
-  .sahl-upgrade-billing button { height: 2.9rem; }
-  .sahl-upgrade-custom-offer { min-height: 2.9rem; margin-top: 0.28rem; padding-block: 0.28rem; }
-  .sahl-upgrade-custom-offer strong { font-size: 0.74rem; }
-  .sahl-upgrade-custom-offer span { font-size: 0.54rem; }
-  .sahl-upgrade-note { margin-top: 0.2rem; font-size: 0.52rem; }
-  .sahl-upgrade-cta { height: 2.35rem; margin-top: 0.25rem; }
-  .sahl-upgrade-trust { margin-top: 0.2rem; }
-  .sahl-upgrade-legal { min-height: 0.9rem; font-size: 0.58rem; }
+  .sahl-upgrade-topbar {
+    min-height: 1.65rem;
+  }
+  .sahl-upgrade-close {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+  .sahl-upgrade-brand {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+  .sahl-upgrade-heading p {
+    display: none;
+  }
+  .sahl-upgrade-heading h1 {
+    margin-top: 0;
+    font-size: 1.22rem;
+  }
+  .sahl-upgrade-tabs {
+    margin-top: 0.28rem;
+  }
+  .sahl-upgrade-tabs button {
+    height: 1.72rem;
+  }
+  .sahl-upgrade-plan {
+    padding-top: 0.28rem;
+  }
+  .sahl-upgrade-plan-title h2 {
+    font-size: 1rem;
+  }
+  .sahl-upgrade-plan-title p {
+    font-size: 0.56rem;
+  }
+  .sahl-upgrade-perks {
+    margin-top: 0.25rem;
+    padding-block: 0.2rem;
+  }
+  .sahl-upgrade-perks li {
+    min-height: 1.08rem;
+    font-size: 0.6rem;
+  }
+  .sahl-upgrade-perks svg {
+    width: 0.76rem;
+    height: 0.76rem;
+  }
+  .sahl-upgrade-billing {
+    margin-top: 0.28rem;
+  }
+  .sahl-upgrade-billing button {
+    height: 2.9rem;
+  }
+  .sahl-upgrade-custom-offer {
+    min-height: 2.9rem;
+    margin-top: 0.28rem;
+    padding-block: 0.28rem;
+  }
+  .sahl-upgrade-custom-offer strong {
+    font-size: 0.74rem;
+  }
+  .sahl-upgrade-custom-offer span {
+    font-size: 0.54rem;
+  }
+  .sahl-upgrade-note {
+    margin-top: 0.2rem;
+    font-size: 0.52rem;
+  }
+  .sahl-upgrade-cta {
+    height: 2.35rem;
+    margin-top: 0.25rem;
+  }
+  .sahl-upgrade-trust {
+    margin-top: 0.2rem;
+  }
+  .sahl-upgrade-legal {
+    min-height: 0.9rem;
+    font-size: 0.58rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -43777,7 +43874,8 @@ html {
     margin-inline: auto;
     justify-content: center;
     gap: clamp(6px, 1.2svh, 12px);
-    padding: max(38px, calc(env(safe-area-inset-top) + 34px)) 16px max(8px, env(safe-area-inset-bottom));
+    padding: max(38px, calc(env(safe-area-inset-top) + 34px)) 16px
+      max(8px, env(safe-area-inset-bottom));
   }
 
   .sauth-card {
@@ -43934,10 +44032,25 @@ html {
     inset: 0;
     opacity: 1;
     background-image:
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-brick) 24%, transparent) 1.1px, transparent 1.7px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-gold) 22%, transparent) 1.1px, transparent 1.7px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-teal) 23%, transparent) 1.1px, transparent 1.7px);
-    background-position: 0 0, 12px 12px, 24px 24px;
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-brick) 24%, transparent) 1.1px,
+        transparent 1.7px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-gold) 22%, transparent) 1.1px,
+        transparent 1.7px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-teal) 23%, transparent) 1.1px,
+        transparent 1.7px
+      );
+    background-position:
+      0 0,
+      12px 12px,
+      24px 24px;
     background-size: 36px 36px;
     mask-image: linear-gradient(to bottom, black 0%, black 76%, transparent 100%);
   }
@@ -43953,10 +44066,25 @@ html {
 
   .sahl-upgrade-dots::before {
     background-image:
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-brick) 76%, transparent) 2.2px, transparent 3.1px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-gold) 72%, transparent) 2.2px, transparent 3.1px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-teal) 74%, transparent) 2.2px, transparent 3.1px);
-    background-position: 0 0, 12px 12px, 24px 24px;
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-brick) 76%, transparent) 2.2px,
+        transparent 3.1px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-gold) 72%, transparent) 2.2px,
+        transparent 3.1px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-teal) 74%, transparent) 2.2px,
+        transparent 3.1px
+      );
+    background-position:
+      0 0,
+      12px 12px,
+      24px 24px;
     background-size: 36px 36px;
     mask-image: linear-gradient(125deg, transparent 40%, black 46%, black 54%, transparent 60%);
     animation: sahl-pricing-dot-wave-primary 1.65s linear infinite;
@@ -43965,10 +44093,25 @@ html {
   .sahl-upgrade-dots::after {
     inset: -18% -30%;
     background-image:
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-teal) 55%, transparent) 1.8px, transparent 2.6px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-brick) 52%, transparent) 1.8px, transparent 2.6px),
-      radial-gradient(circle, color-mix(in oklab, var(--pricing-dot-gold) 52%, transparent) 1.8px, transparent 2.6px);
-    background-position: 0 0, 12px 12px, 24px 24px;
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-teal) 55%, transparent) 1.8px,
+        transparent 2.6px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-brick) 52%, transparent) 1.8px,
+        transparent 2.6px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--pricing-dot-gold) 52%, transparent) 1.8px,
+        transparent 2.6px
+      );
+    background-position:
+      0 0,
+      12px 12px,
+      24px 24px;
     background-size: 36px 36px;
     mask-image: linear-gradient(55deg, transparent 43%, black 48%, black 52%, transparent 57%);
     opacity: 0.55;
