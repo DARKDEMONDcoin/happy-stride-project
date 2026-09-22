@@ -100,6 +100,14 @@ const SPEC: Record<string, Spec> = {
     needsMedia: false,
     maxLineLen: 220,
   },
+  telegram: {
+    hardLimit: 4096,
+    sweet: [80, 1024],
+    hashtags: [0, 5],
+    maxEmojis: 6,
+    needsMedia: false,
+    maxLineLen: 200,
+  },
 };
 
 const DEFAULT_SPEC: Spec = {

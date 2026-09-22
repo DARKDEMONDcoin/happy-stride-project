@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -761,8 +761,10 @@ function ChatView({
   const quickSkills = featuredSkillsFor(id).slice(0, 6);
   const employeeCopy: { prompts: string[]; greetings: string[] } =
     EMPLOYEE_COPY[id] ?? EMPLOYEE_COPY["sonny"]!;
-  const rotatingPlaceholder = useTypewriter(employeeCopy.prompts);
-  const rotatingGreeting = useTypewriter(employeeCopy.greetings, 2400);
+  // أثناء وجود رسائل لا نشغّل مؤقتات كتابة مستمرة تعيد رسم صفحة المحادثة كلها.
+  const hasMessages = Boolean((messages ?? []).length || pending);
+  const rotatingPlaceholder = useTypewriter(hasMessages ? [employeeCopy.prompts[0] ?? ""] : employeeCopy.prompts);
+  const rotatingGreeting = useTypewriter(hasMessages ? [employeeCopy.greetings[0] ?? ""] : employeeCopy.greetings, 2400);
   const userName = profile?.full_name?.trim().split(/\s+/)[0] || "صديقي";
   /** آخر رسالة فشل إرسالها — لزر «أعد المحاولة». */
   const [pendingText, setPendingText] = useState<string | null>(null);
@@ -954,11 +956,21 @@ function ChatView({
 
   const busy = send.isPending || skillRun.isPending;
 
+  // نحدّث شاشة البث مرة واحدة لكل إطار بدلاً من إعادة رسم المحادثة مع كل جزء صغير.
+  const streamBufferRef = useRef("");
+  const streamFrameRef = useRef<number | null>(null);
+  const flushStream = () => {
+    streamFrameRef.current = null;
+    const chunk = streamBufferRef.current;
+    streamBufferRef.current = "";
+    if (chunk && !cancelledRef.current) setLiveText((previous) => previous + chunk);
+  };
+
   // المستخدم حرّ في التقليب أثناء كتابة الموظف: لا ننزل معه إلا إذا كان أصلاً عند الأسفل.
   useEffect(() => {
     if (!stickToBottom) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages?.length, send.isPending, skillRun.isPending, liveText, liveStep, stickToBottom]);
+  }, [messages?.length, send.isPending, skillRun.isPending, liveStep, stickToBottom]);
 
   const onColumnScroll = () => {
     const el = columnRef.current;
